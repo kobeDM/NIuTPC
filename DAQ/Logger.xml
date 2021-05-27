@@ -11,7 +11,7 @@
           <hostAddr>127.0.0.1</hostAddr>
           <hostPort>50000</hostPort>
           <instName>NIuTPCReader00.rtc</instName>
-          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader/NIuTPCReaderComp</execPath>
+          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader0/NIuTPCReader0Comp</execPath>
           <confFile>/tmp/daqmw/rtc.conf</confFile>
           <startOrd>6</startOrd>	       
 	      <inPorts>
@@ -33,7 +33,7 @@
           <hostAddr>127.0.0.1</hostAddr>
           <hostPort>50000</hostPort>
           <instName>NIuTPCReader10.rtc</instName>
-          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader/NIuTPCReaderComp</execPath>
+          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader1/NIuTPCReader1Comp</execPath>
           <confFile>/tmp/daqmw/rtc.conf</confFile>
           <startOrd>5</startOrd>	       
 	      <inPorts>
@@ -55,7 +55,7 @@
           <hostAddr>127.0.0.1</hostAddr>
           <hostPort>50000</hostPort>
           <instName>NIuTPCReader20.rtc</instName>
-          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader/NIuTPCReaderComp</execPath>
+          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader2/NIuTPCReader2Comp</execPath>
           <confFile>/tmp/daqmw/rtc.conf</confFile>
           <startOrd>4</startOrd>	       
 	      <inPorts>
@@ -77,7 +77,7 @@
           <hostAddr>127.0.0.1</hostAddr>
           <hostPort>50000</hostPort>
           <instName>NIuTPCReader30.rtc</instName>
-          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader/NIuTPCReaderComp</execPath>
+          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCReader3/NIuTPCReader3Comp</execPath>
           <confFile>/tmp/daqmw/rtc.conf</confFile>
           <startOrd>3</startOrd>	       
 	      <inPorts>
@@ -99,7 +99,7 @@
 		  <hostAddr>127.0.0.1</hostAddr>
 		  <hostPort>50000</hostPort>
 		  <instName>Merger0.rtc</instName>
-          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCMerger/NIuTPCMergerComp</execPath>
+          <execPath>/home/msgc/repo/NIuTPC/DAQ/NIuTPCMerger/MergerComp</execPath>
 		  <confFile>/tmp/daqmw/rtc.conf</confFile>
 		  <startOrd>2</startOrd>
 		  <inPorts>
