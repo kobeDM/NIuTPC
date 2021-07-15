@@ -330,7 +330,7 @@ NIuTPCMonitor::daq_start()
 			delete m_c[i];
 			m_c[i] = 0;
 		}
-		m_c[i] = new TCanvas(Form("c_%d",i),"",1200,600);
+		m_c[i] = new TCanvas(Form("c_%d",i),Form("c_%d",i),1200,600);
 		m_c[i]->Divide(2,3); // 4x2 plots		      
 	}
 	if( m_c_noise ){

@@ -64,7 +64,7 @@
             <outPort>niutpcreader_out2</outPort>
           </outPorts>
           <params>
-            <param pid="srcAddr">192.168.12.11</param>
+            <param pid="srcAddr">192.168.13.11</param>
             <param pid="srcPort">24</param>
             <param pid="delay">3000</param>
             <param pid="thinning">8</param>		  
@@ -86,7 +86,7 @@
             <outPort>niutpcreader_out3</outPort>
           </outPorts>
           <params>
-            <param pid="srcAddr">192.168.13.11</param>
+            <param pid="srcAddr">192.168.14.11</param>
             <param pid="srcPort">24</param>
             <param pid="delay">3000</param>
             <param pid="thinning">8</param>		  
@@ -128,7 +128,7 @@
           </inPorts>
           <outPorts/>
           <params>
-            <param pid="dirName">/nadb16/0.1c/data/dat</param>
+            <param pid="dirName">/nadb18/01c/data/dat</param>
             <param pid="isLogging">yes</param>
             <param pid="maxFileSizeInMegaByte">1024</param>
             <param pid="appendTimestamp">YES</param>
