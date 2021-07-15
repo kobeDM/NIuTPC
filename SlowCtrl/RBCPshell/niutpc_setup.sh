@@ -39,11 +39,12 @@ echo -e "wrb 0x12 1\n quit" | python rbcpshell.py ${ip} 4660
 sleep 1
 
 # self-trigger threshold for each channe [15:8]
-echo -e "wrb 0x13 0\n quit" | python rbcpshell.py ${ip} 4660
+echo -e "wrb 0x13 1\n quit" | python rbcpshell.py ${ip} 4660
 sleep 1
 
 # self-trigger threshold for each channe [7:0]
-echo -e "wrb 0x14 255\n quit" | python rbcpshell.py ${ip} 4660
+# echo -e "wrb 0x14 128\n quit" | python rbcpshell.py ${ip} 4660
+echo -e "wrb 0x14 0\n quit" | python rbcpshell.py ${ip} 4660
 sleep 1
 
 # the number of channels used for self-trigger
