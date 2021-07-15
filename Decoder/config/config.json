@@ -1,0 +1,12 @@
+{
+
+	"config":{
+		"offset_sampling":1000, // clock
+		"tot_anode_threshold":200, //mV
+		"tot_cathode_threshold":-200, //mV
+		"lg_anode_threshold":10, //mV
+		"lg_cathode_threshold":-10, //mV
+		"minority_threshold":40 //mV
+	}
+
+}
