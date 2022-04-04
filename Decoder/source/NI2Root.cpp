@@ -164,7 +164,8 @@ int main(int argc,char *argv[]){
         int data_set = length/2/N_CHANNEL;
         if(data_set > N_SAMPLE){
             cerr << "ERROR: Too large # of sample" << endl;
-            return 1;
+            // return 1;
+            break;
         }
         //data read
         char *data_s;

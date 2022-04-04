@@ -38,7 +38,7 @@ fi
 #########################################
 #  Main
 #########################################
-COMMAND="NI2Anal"
+COMMAND="NIAnal"
 
 FILE_HEAD=${1}
 START_NUM=${2}
@@ -53,7 +53,10 @@ for CURRENT_NUM in `seq -f %03g $START_NUM $END_NUM`
 do
     FILE_NAME=${FILE_HEAD}"_"${CURRENT_NUM}".root"
     echo $FILE_NAME
-    $COMMAND $FILE_NAME #>& /dev/null &
+    $COMMAND $FILE_NAME $DECODER_DIR/config/config.json
+    # $COMMAND $FILE_NAME $DECODER_DIR/config/config.json #>& /dev/null &
+    # nohup $COMMAND $FILE_NAME $DECODER_DIR/config/config.json > /dev/null &
+    # nohup $COMMAND $FILE_NAME $DECODER_DIR/config/config.json > output_"${CURRENT_NUM}".txt 2>&1 #>& /dev/null &
 done
 
     

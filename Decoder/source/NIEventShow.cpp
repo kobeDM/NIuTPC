@@ -43,8 +43,6 @@ using namespace std;
 
 //------------- main -------------------------------------------------
 int main(int argc,char *argv[]){
-	clock_t t1,t2;
-	
 
 	Int_t MyPalette[64];
 	Double_t Red   [] = {1.0, 0.0, 1.0};
@@ -56,7 +54,7 @@ int main(int argc,char *argv[]){
 
 	if(argc <4){
 		std::cerr << "Usage:" << std::endl;
-		std::cerr << "/.main [filename.root] [config.json] [event number]" << std::endl;
+		std::cerr << "/.NIEventShow [filename.root] [config.json] [event number]" << std::endl;
 		return 1;
 	}
 	
@@ -69,6 +67,7 @@ int main(int argc,char *argv[]){
 		std::cout << "Failure!!!" << std::endl;
 		return 1;
 	}
+
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  read config file 
 	//++++++++++++++++++++++++++++++++++++++++++
@@ -102,7 +101,7 @@ int main(int argc,char *argv[]){
 	std::cerr << "input config file : " << conffilename << endl;
 	ni_conf->PrintConfigJSON();
 	std::cerr << "======================================" << std::endl;
-	TApplication app("app",&argc,argv);  
+	// TApplication app("app",&argc,argv);  
 
 	TFile *f=new TFile(dirfilename.c_str());
 	if(!f){
@@ -205,14 +204,33 @@ int main(int argc,char *argv[]){
 	h_strip_c_lg->SetStats(0);
 	for(int j=0;j<N_CHANNEL;j++){
 		for(int k=0;k<SAMPLING_NUM;k++){
-			g_a_hg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, a_hg_adc.at(j).at(k)-pedestal_a_hg[j] - (63-j)*100);
-			g_a_lg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, a_lg_adc.at(j).at(k)-pedestal_a_lg[j] - (63-j)*10);
-			g_c_hg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, c_hg_adc.at(j).at(k)-pedestal_c_hg[j] - (63-j)*100);
-			g_c_lg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, c_lg_adc.at(j).at(k)-pedestal_c_lg[j] - (63-j)*10);
+			g_a_hg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, a_hg_adc.at(j).at(k)-pedestal_a_hg[j] - (31-j)*100);
+			g_a_lg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, a_lg_adc.at(j).at(k)-pedestal_a_lg[j] - (31-j)*10);
+			g_c_hg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, c_hg_adc.at(j).at(k)-pedestal_c_hg[j] - (31-j)*100);
+			g_c_lg[j]->SetPoint(k, k/SAMPLING_HELZ*1e6, c_lg_adc.at(j).at(k)-pedestal_c_lg[j] - (31-j)*10);
             g_a_hg[j]->SetMarkerColor(MyPalette[j]);
             g_a_lg[j]->SetMarkerColor(MyPalette[j]);
             g_c_hg[j]->SetMarkerColor(MyPalette[j]);
             g_c_lg[j]->SetMarkerColor(MyPalette[j]);
+
+            g_a_hg[j]->SetMarkerStyle( 1 );
+            g_a_lg[j]->SetMarkerStyle( 1 );
+            g_c_hg[j]->SetMarkerStyle( 1 );
+            g_c_lg[j]->SetMarkerStyle( 1 );
+
+            // g_a_hg[j]->SetMarkerStyle( 8 );
+            // g_a_lg[j]->SetMarkerStyle( 8 );
+            // g_c_hg[j]->SetMarkerStyle( 8 );
+            // g_c_lg[j]->SetMarkerStyle( 8 );
+
+            // g_a_hg[j]->SetMarkerSize( 0.3 );
+            // g_a_lg[j]->SetMarkerSize( 0.3 );
+            // g_c_hg[j]->SetMarkerSize( 0.3 );
+            // g_c_lg[j]->SetMarkerSize( 0.3 );
+            // g_a_hg[j]->SetMarkerSize( 0.2 );
+            // g_a_lg[j]->SetMarkerSize( 0.2 );
+            // g_c_hg[j]->SetMarkerSize( 0.2 );
+            // g_c_lg[j]->SetMarkerSize( 0.2 );
 
             double a_hg_adc_abs = mask_a_hg[j] ? 0.0 : a_hg_adc[j][k]-pedestal_a_hg[j];
             double a_lg_adc_abs = mask_a_lg[j] ? 0.0 : a_lg_adc[j][k]-pedestal_a_lg[j];
@@ -411,7 +429,7 @@ int main(int argc,char *argv[]){
 	
 	c_strip->cd(1);
 	g_a_hg_main_peak->SetMarkerStyle(8);
-	g_a_hg_main_peak->SetMarkerSize(0.3);
+	g_a_hg_main_peak->SetMarkerSize(0.6);
 	g_a_hg_main_peak->SetMarkerColor(kMagenta);
 	g_a_main_rise->SetMarkerStyle(8);
 	g_a_main_rise->SetMarkerSize(0.3);
@@ -442,7 +460,7 @@ int main(int argc,char *argv[]){
 	
 	c_strip->cd(3);
 	g_c_hg_main_peak->SetMarkerStyle(8);
-	g_c_hg_main_peak->SetMarkerSize(0.3);
+	g_c_hg_main_peak->SetMarkerSize(0.6);
 	g_c_hg_main_peak->SetMarkerColor(kMagenta);
 	g_c_main_rise->SetMarkerStyle(8);
 	g_c_main_rise->SetMarkerSize(0.3);
@@ -471,10 +489,23 @@ int main(int argc,char *argv[]){
 	
 	TCanvas *c_wave=new TCanvas("c_wave","",1000,1000);
 	c_wave->Divide(2,2);
-	c_wave->cd(1)->DrawFrame(0,-4000,1600,1000,"HG waveform;us(4000sampling);mV");
-	c_wave->cd(2)->DrawFrame(0,-4000,1600,1000,"HG waveform;us(4000sampling);mV");
-	c_wave->cd(3)->DrawFrame(0,-400,1600,100,"LG waveform;us(4000sampling);mV");
-	c_wave->cd(4)->DrawFrame(0,-400,1600,100,"LG waveform;us(4000sampling);mV");
+	// c_wave->cd(1)->DrawFrame(0,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
+	// c_wave->cd(2)->DrawFrame(0,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
+
+
+	// c_wave->cd(1)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
+	// c_wave->cd(2)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
+
+	c_wave->cd(1)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
+	c_wave->cd(2)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
+
+
+	// c_wave->cd(1)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
+	// c_wave->cd(2)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
+
+	// c_wave->cd(2)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
+	c_wave->cd(3)->DrawFrame(0,-400,1600,400,"LG waveform;us(4000sampling);mV");
+	c_wave->cd(4)->DrawFrame(0,-400,1600,400,"LG waveform;us(4000sampling);mV");
 	for(int i=0;i<N_CHANNEL;i++){
 		c_wave->cd(1); if( mask_a_hg[i] == false ) g_a_hg[i]->Draw("p same");
 		c_wave->cd(3); if( mask_a_lg[i] == false ) g_a_lg[i]->Draw("p same");
@@ -485,7 +516,9 @@ int main(int argc,char *argv[]){
 	g_mino_search->SetMarkerStyle(8);
 	g_mino_search->SetMarkerSize(0.5);
 	g_mino_search->SetMarkerColor(kGreen+3);
-	// g_mino_search->Draw("same p");
+	g_mino_search->Draw("same p");
+
+    c_wave->SaveAs( "wave.png" );
 
 	TCanvas *c_charge = new TCanvas("c_charge","c_charge",1000,1000);
 	c_charge->Divide(2,2);
@@ -519,6 +552,8 @@ int main(int argc,char *argv[]){
 	h_c_lg_charge->GetXaxis()->SetTitle("CH");	
 	h_c_lg_charge->GetYaxis()->SetTitle("charge(mV*0.4us)");	
 	h_c_lg_charge->Draw("hist");	
+
+    c_charge->SaveAs( "charge.png" );
 
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  Output
@@ -554,7 +589,7 @@ int main(int argc,char *argv[]){
 	h_strip_c_lg->Write();
 	fout->Close();
     */
-	app.Run();
+	// app.Run();
 
 	return 1;
 }

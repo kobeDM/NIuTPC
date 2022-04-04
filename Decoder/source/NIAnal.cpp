@@ -103,7 +103,7 @@ int main(int argc,char *argv[]){
 	std::cerr << "input config file : " << conffilename << endl;
 	ni_conf->PrintConfigJSON();
 	std::cerr << "======================================" << std::endl;
-	TApplication app("app",&argc,argv);  
+	// TApplication app("app",&argc,argv);  
 
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  Iutput Tree
@@ -165,6 +165,7 @@ int main(int argc,char *argv[]){
 	vector<double> outtree_abs_x,outtree_abs_y,outtree_abs_z;
 	double outtree_ave_abs_x, outtree_ave_abs_y, outtree_ave_abs_z;
 
+	outtree->Branch("ev",                   &outtree_ev_num);
 	outtree->Branch("a_hg_sum_pulse_height",&outtree_a_hg_sum_pulse_height);
 	outtree->Branch("a_lg_sum_pulse_height",&outtree_a_lg_sum_pulse_height);
 	outtree->Branch("a_hg_sum_charge",      &outtree_a_hg_sum_charge);
@@ -260,7 +261,7 @@ int main(int argc,char *argv[]){
 		outtree_xz_z.clear();
 		outtree_yz_y.clear();
 		outtree_yz_z.clear();
-	  outtree_a_hg_minopeak_time.clear();
+        outtree_a_hg_minopeak_time.clear();
 		outtree_c_hg_minopeak_time.clear();
 		outtree_dt.clear();
 		outtree_abs_x.clear();
@@ -269,6 +270,7 @@ int main(int argc,char *argv[]){
 
 		int trigger_num = event->GetTrigger();
 
+        outtree_ev_num = ev;
 		vector<vector<double>> a_hg_adc = event->GetAnodeHGADC();
 		vector<vector<double>> a_lg_adc = event->GetAnodeLGADC();
 		vector<vector<double>> c_hg_adc = event->GetCathodeHGADC();
@@ -555,6 +557,7 @@ int main(int argc,char *argv[]){
 	
 		//for debug
 		h_31ch_32ch_dt->Fill(peak_time_32ch-peak_time_31ch);
+        std::cout << dirfilename << "\t" << ev << std::endl;
 	}
 
 	//++++++++++++++++++++++++++++++++++++++++++
@@ -609,7 +612,7 @@ int main(int argc,char *argv[]){
 	h_31ch_32ch_dt->Draw();
 
 	outtree->Write();
-	app.Run();
+	// app.Run();
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  Output
 	//++++++++++++++++++++++++++++++++++++++++++
@@ -617,7 +620,7 @@ int main(int argc,char *argv[]){
 	std::cout << "" <<std::endl;
 	std::cout << "--- anal end ---" <<std::endl;
 
-	app.Run();
+	// app.Run();
 
 	return 1;
 }
