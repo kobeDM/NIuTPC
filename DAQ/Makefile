@@ -4,6 +4,12 @@ SUBDIRS += NIuTPCMonitor
 SUBDIRS += NIuTPCLogger
 SUBDIRS += Dispatcher
 
+SUBDIRS += NIuTPCReader0
+SUBDIRS += NIuTPCReader1
+SUBDIRS += NIuTPCReader2
+SUBDIRS += NIuTPCReader3
+
+
 .PHONY: $(SUBDIRS)
 
 all: $(SUBDIRS)
