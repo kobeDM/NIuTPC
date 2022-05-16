@@ -1,7 +1,7 @@
 {
-
 	"config":{
 		"offset_sampling":1000, // clock
+        "cal_factor":0.000237, // calibration factor
 		"tot_anode_threshold":200, //mV
 		"tot_cathode_threshold":-200, //mV
 		"lg_anode_threshold":10, //mV

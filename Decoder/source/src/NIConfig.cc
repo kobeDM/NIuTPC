@@ -20,7 +20,7 @@ void NIConfig::PrintConfigJSON()
 	
 	printf("---------- configuration parameters ----------\n");
 	printf("Waveform Offset Calc Sampling    : %d clock\n",offset_sampling);
-	printf("Calibration Factor               : %d keV/ADC\n",cal_factor);
+	printf("Calibration Factor               : %lf keV/ADC\n",cal_factor);
 	printf("Drift Velocity (Main Charge)     : %.2lf cm/us\n",driftV_main);
 	printf("Drift Velocity (Minority Charge) : %.2lf cm/us\n",driftV_mino);
 	printf("ANODE TOT(HG) Threshold          : %.1lf mV\n",tot_anode_threshold);
@@ -33,12 +33,14 @@ void NIConfig::PrintConfigJSON()
 
 }
 
-void NIConfig::ReadConfigJSON(std::string conffilename)
+bool NIConfig::ReadConfigJSON(std::string conffilename)
 {
 	std::string::size_type index_conf = conffilename.find(".json");
 	if( index_conf == std::string::npos ) { 
 		std::cout << "Failure!!!" << std::endl;
+        return false;
 	}
+
 	boost::property_tree::ptree pt;
 	read_json(conffilename,pt);
 
@@ -47,8 +49,8 @@ void NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<int> buf = pt.get_optional<int>("config.cal_factor")){
-		this->offset_sampling = pt.get<int>("config.cal_factor");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.cal_factor")){
+		this->cal_factor = pt.get<double>("config.cal_factor");
 	}else{
 	}
 
@@ -97,7 +99,5 @@ void NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-
+    return true;
 }
-
-
