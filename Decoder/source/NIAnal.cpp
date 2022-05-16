@@ -393,6 +393,7 @@ int main(int argc,char *argv[]){
 				}
 				h_mino_search->SetBinContent(k,a_hg_adc[j][k]-pedestal_a_hg[j]);//anode only
 			}
+
 			//++++++++++++++++++++++++++++++++++++++++++
 			//  Minority Peak analysis
 			//++++++++++++++++++++++++++++++++++++++++++
@@ -439,7 +440,7 @@ int main(int argc,char *argv[]){
 			//  data push_back
 			//++++++++++++++++++++++++++++++++++++++++++
 			//main peak triggered
-			if(hg_a_mainpeak_time!=-1){
+			if(hg_a_mainpeak_time>-1){
 				double this_xz_x = (29-j+0.5)*0.04;//cm
 				double this_xz_z = lg_a_mainpeak_time*driftV_main*1e-3;//cm
 				//std::cout << "x : " << this_xz_x << " cm , z:" << this_xz_z << " cm" <<std::endl;
@@ -462,7 +463,7 @@ int main(int argc,char *argv[]){
 				outtree_a_hg_tot.push_back(hg_a_this_tot);
 				h_xz->Fill(this_xz_x,this_xz_z);
 				//minority triggered
-				if(this_mino_time!=-1){
+				if(this_mino_time>-1){
 					//if(hg_a_pulse_max<300)continue;
 					double this_abs_z = (lg_a_mainpeak_time-this_mino_time)*calc_abs_z_param*1e-3;
 					h_strip_dt->Fill(lg_a_mainpeak_time-this_mino_time);
@@ -475,7 +476,7 @@ int main(int argc,char *argv[]){
 					outtree_a_hg_minopeak_time.push_back(this_mino_time);
 				}
 			}
-			if(hg_c_mainpeak_time!=-1){
+			if(hg_c_mainpeak_time>-1){
 				double this_yz_y = (29-j+0.5)*0.04;//cm
 				double this_yz_z = lg_c_mainpeak_time*driftV_main*1e-3;//cm
 				//std::cout << "y : " << this_yz_y << " cm , z:" << this_yz_z << " cm" <<std::endl;
