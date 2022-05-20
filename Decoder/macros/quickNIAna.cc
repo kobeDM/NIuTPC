@@ -4,11 +4,7 @@
 #include "NAUtil.h"
 #include "NAUtil.cc"
 
-// const double CALIB_FACTOR = 0.000325; // keV/ADC
-// const double CALIB_FACTOR = 0.0016; // keV/ADC
-
-const double SIM_ENERGY_DEPOSIT = 128.0; // keV
-
+const double SIM_ENERGY_DEPOSIT = 128.0; // keV (3 board DAQ: 1.28 cm)
 
 TLatex* CreateDrawText( const double&       x,
                         const double&       y,
@@ -51,6 +47,7 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     double calFactor = pConfig->cal_factor;
 
     int ev = 0;
+    int fileID = 0;
     vector< double >* pVec_xz_x = nullptr;
     vector< double >* pVec_xz_z = nullptr;
     vector< double >* pVec_yz_y = nullptr;
@@ -63,7 +60,8 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     vector< double >* pVec_c_hg_mainrise_time = nullptr;
     vector< double >* pVec_c_hg_mainfall_time = nullptr;
 
-    pTree->SetBranchAddress( "ev", &ev );
+    pTree->SetBranchAddress( "eventID", &ev );
+    pTree->SetBranchAddress( "fileID", &fileID );
     pTree->SetBranchAddress( "xz_x", &pVec_xz_x );
     pTree->SetBranchAddress( "xz_z", &pVec_xz_z );
     pTree->SetBranchAddress( "yz_y", &pVec_yz_y );
@@ -80,8 +78,8 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     pTree->SetBranchAddress( "c_hg_mainrise_time", &pVec_c_hg_mainrise_time );
     pTree->SetBranchAddress( "c_hg_mainfall_time", &pVec_c_hg_mainfall_time );
 
-    TH1D* pHistEnergy = new TH1D( "histEnergy", "histEnergy", 50, 0.0, 600.0 );
-    TH1D* pHistEnergyCut = new TH1D( "histEnergyCut", "histEnergyCut", 50, 0.0, 600.0 );
+    TH1D* pHistEnergy = new TH1D( "histEnergy", "histEnergy", 100, 0.0, 400.0 );
+    TH1D* pHistEnergyCut = new TH1D( "histEnergyCut", "histEnergyCut", 100, 0.0, 400.0 );
 
     TH2D* pHistHitmapXY = new TH2D( "histHitmapXY", "histHitmapXY", 100, -1.5, 1.5, 100, -1.5,  1.5 );
     TH2D* pHistHitmapXZ = new TH2D( "histHitmapXZ", "histHitmapXZ", 100, -1.5, 1.5, 100,  0.0, 12.0 );
@@ -90,11 +88,11 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     TH2D* pHistHitmapXMaxMin = new TH2D( "histHitmapXMaxMin", "histHitmapXMaxMin", 100, -1.5, 1.5, 100, -1.5,  1.5 );
     TH2D* pHistHitmapYMaxMin = new TH2D( "histHitmapYMaxMin", "histHitmapYMaxMin", 100, -1.5, 1.5, 100, -1.5,  1.5 );
 
-    TH2D* pHistEnergyToT    = new TH2D( "histEnergyToT", "histEnergyToT", 50, 0.0, 600.0, 50, 0.0, 2000.0 );
-    TH2D* pHistEnergyToTEn  = new TH2D( "histEnergyToTEn", "histEnergyToTEn", 50, 0.0, 600.0, 50, 0.0, 10.0 );
-    TH2D* pHistEnergyLengthXZ = new TH2D( "histEnergyLengthXZ", "histEnergyLengthXZ", 50, 0.0, 600.0, 50, 0.0, 3.0 );
-    TH2D* pHistEnergyLengthYZ = new TH2D( "histEnergyLengthYZ", "histEnergyLengthYZ", 50, 0.0, 600.0, 50, 0.0, 3.0 );
-    TH2D* pHistEnergyLengthXY = new TH2D( "histEnergyLengthXY", "histEnergyLengthXY", 50, 0.0, 600.0, 50, 0.0, 3.0 );
+    TH2D* pHistEnergyToT    = new TH2D( "histEnergyToT", "histEnergyToT", 100, 0.0, 400.0, 100, 0.0, 2000.0 );
+    TH2D* pHistEnergyToTEn  = new TH2D( "histEnergyToTEn", "histEnergyToTEn", 100, 0.0, 400.0, 100, 0.0, 10.0 );
+    TH2D* pHistEnergyLengthXZ = new TH2D( "histEnergyLengthXZ", "histEnergyLengthXZ", 100, 0.0, 400.0, 100, 0.0, 2.0 );
+    TH2D* pHistEnergyLengthYZ = new TH2D( "histEnergyLengthYZ", "histEnergyLengthYZ", 100, 0.0, 400.0, 100, 0.0, 2.0 );
+    TH2D* pHistEnergyLengthXY = new TH2D( "histEnergyLengthXY", "histEnergyLengthXY", 100, 0.0, 400.0, 100, 0.0, 2.0 );
 
     TH2D* pHistHitmapXY_cut = new TH2D( "histHitmapXY_cut", "histHitmapXY_cut", 100, -1.5, 1.5, 100, -1.5,  1.5 );
 
@@ -200,13 +198,13 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
         //     yz_y_min > -1.0 && yz_y_max < 1.0 && xz_x_min > -1.0 && xz_x_max < 1.0 ) {
         // if( fabs( ave_x ) < 0.8 && fabs( ave_y ) < 0.8 && a_hg_sum_charge * calFactor > 10.0 && xz_x_max < 1.0 && xz_x_min > -1.0 && yz_y_min > -1.0 && yz_y_max < 1.0 ) {
         // if( fabs( ave_x ) < 0.8 && fabs( ave_y ) < 0.8 && a_hg_sum_charge * calFactor > 100.0 && xz_x_max > 0.8 && xz_x_min < -0.8 ) {
-        if( lengthXZ < 1.5 && a_hg_sum_charge * calFactor > 100.0 )
-            DEBUG(Form("%d\t%lf\t%lf\t%lf\t%lf\t%lf",ev, a_hg_sum_charge * calFactor, lengthXZ, lengthXY, lengthX, lengthY));
+        // if( lengthXZ < 1.5 && a_hg_sum_charge * calFactor > 100.0 )
+        if( xz_x_max > 1 && xz_x_min < 0 )
+            std::cout << Form("%d\t%lf\t%lf\t%lf\t%lf\t%lf",ev, a_hg_sum_charge * calFactor, lengthXZ, lengthXY, lengthX, lengthY) << std::endl;
+
         pHistEnergyLengthXZ->Fill( a_hg_sum_charge * calFactor, lengthXZ );
         pHistEnergyLengthXY->Fill( a_hg_sum_charge * calFactor, lengthXY );
         pHistEnergyLengthYZ->Fill( a_hg_sum_charge * calFactor, lengthYZ );
-        // }
-        // DEBUG(lengthYZ);
 
         pHistEnergy->Fill( a_hg_sum_charge * calFactor );
         // if( lengthXZ > 2.0 || lengthYZ > 2.0 ) pHistEnergyCut->Fill( a_hg_sum_charge * calFactor );
@@ -246,46 +244,55 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
     pHistHitmapXY->SetXTitle( "X [cm]" );
     pHistHitmapXY->SetYTitle( "Y [cm]" );
+    pHistHitmapXY->SetZTitle( "Events" );
     pHistHitmapXY->Draw( "colz" );
     cvs.SaveAs( Form( "%s/hitmapXY.png", outputDir.c_str( ) ) );
 
     pHistHitmapXY_cut->SetXTitle( "X [cm]" );
     pHistHitmapXY_cut->SetYTitle( "Y [cm]" );
+    pHistHitmapXY_cut->SetZTitle( "Events" );
     pHistHitmapXY_cut->Draw( "colz" );
     cvs.SaveAs( Form( "%s/hitmapXY_cut.png", outputDir.c_str( ) ) );
 
     pHistHitmapXZ->SetXTitle( "X [cm]" );
     pHistHitmapXZ->SetYTitle( "Z [cm]" );
+    pHistHitmapXZ->SetZTitle( "Events" );
     pHistHitmapXZ->Draw( "colz" );
     cvs.SaveAs( Form( "%s/hitmapXZ.png", outputDir.c_str( ) ) );
 
     pHistHitmapYZ->SetXTitle( "Y [cm]" );
     pHistHitmapYZ->SetYTitle( "Z [cm]" );
+    pHistHitmapYZ->SetZTitle( "Events" );
     pHistHitmapYZ->Draw( "colz" );
     cvs.SaveAs( Form( "%s/hitmapYZ.png", outputDir.c_str( ) ) );
 
     pHistHitmapXMaxMin->SetXTitle( "X max [cm]" );
     pHistHitmapXMaxMin->SetYTitle( "X min [cm]" );
+    pHistHitmapXMaxMin->SetZTitle( "Events" );
     pHistHitmapXMaxMin->Draw( "colz" );
     cvs.SaveAs( Form( "%s/hitmapXMaxMin.png", outputDir.c_str( ) ) );
 
     pHistHitmapYMaxMin->SetXTitle( "Y max [cm]" );
     pHistHitmapYMaxMin->SetYTitle( "Y min [cm]" );
+    pHistHitmapYMaxMin->SetZTitle( "Events" );
     pHistHitmapYMaxMin->Draw( "colz" );
     cvs.SaveAs( Form( "%s/hitmapYMaxMin.png", outputDir.c_str( ) ) );
 
     pHistEnergyToT->SetXTitle( "Energy [keV]" );
     pHistEnergyToT->SetYTitle( "#SigmaToT [us]" );
+    pHistEnergyToT->SetZTitle( "Events" );
     pHistEnergyToT->Draw( "colz" );
     cvs.SaveAs( Form( "%s/energyToT.png", outputDir.c_str( ) ) );
 
     pHistEnergyToTEn->SetXTitle( "Energy [keV]" );
     pHistEnergyToTEn->SetYTitle( "#SigmaToT / Energy [us/keV]" );
+    pHistEnergyToTEn->SetZTitle( "Events" );
     pHistEnergyToTEn->Draw( "colz" );
     cvs.SaveAs( Form( "%s/energyToTEn.png", outputDir.c_str( ) ) );
 
     pHistEnergyLengthXZ->SetXTitle( "Energy [keV]" );
     pHistEnergyLengthXZ->SetYTitle( "Length [cm]" );
+    pHistEnergyLengthXZ->SetZTitle( "Events" );
     pHistEnergyLengthXZ->Draw( "colz" );
     g_SRIM_F->Draw( "same" );
     g_SRIM_He->Draw( "same" );
@@ -294,6 +301,7 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
     pHistEnergyLengthYZ->SetXTitle( "Energy [keV]" );
     pHistEnergyLengthYZ->SetYTitle( "Length [cm]" );
+    pHistEnergyLengthYZ->SetZTitle( "Events" );
     pHistEnergyLengthYZ->Draw( "colz" );
     g_SRIM_F->Draw( "same" );
     g_SRIM_He->Draw( "same" );
@@ -302,6 +310,7 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
     pHistEnergyLengthXY->SetXTitle( "Energy [keV]" );
     pHistEnergyLengthXY->SetYTitle( "Length [cm]" );
+    pHistEnergyLengthXY->SetZTitle( "Events" );
     pHistEnergyLengthXY->Draw( "colz" );
     g_SRIM_F->Draw( "same" );
     g_SRIM_He->Draw( "same" );
