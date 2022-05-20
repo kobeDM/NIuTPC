@@ -34,6 +34,11 @@ then
    exit
 fi
    
+# prepare config file
+if [ ! -f config.json ]; then
+    echo "copy config.json from ${NI_DECODER_DIR}/config/config.json" 
+    cp ${NI_DECODER_DIR}/config/config.json ./
+fi
 
 #########################################
 #  Main
@@ -53,7 +58,7 @@ for CURRENT_NUM in `seq -f %03g $START_NUM $END_NUM`
 do
     FILE_NAME=${FILE_HEAD}"_"${CURRENT_NUM}".root"
     echo $FILE_NAME
-    $COMMAND $FILE_NAME $NI_DECODER_DIR/config/config.json
+    $COMMAND $FILE_NAME config.json
 done
 
     
