@@ -259,8 +259,8 @@ std::string NAUtil::GetFileName( const std::string& path )
 
 // ---------------------------------------------------------------
 // Extract extension from file name
-// return: file name (without extension)
-std::string NAUtil::ExtractPathWithoutExt( const std::string& path )
+// return: base file name (without extension)
+std::string NAUtil::GetBaseFileName( const std::string& path )
 {
     std::string::size_type pos;
     if( ( pos = path.find_last_of( "." ) ) == std::string::npos ) {

@@ -38,8 +38,8 @@
 // Constant parameter definition
 // ---------------------------------------------------------------
 
-// for debug
-#define DEBUG(val) std::cout<<"Debugging : "<<val<<std::endl;
+// // for debug
+// #define DEBUG(val) std::cout<<"Debugging : "<<val<<std::endl;
 
 class NAUtil
 {
@@ -182,8 +182,8 @@ public:
 
     // ---------------------------------------------------------------
     // Extract extension from file name
-    // return: file name (without extension)
-    static std::string ExtractPathWithoutExt( const std::string& path );
+    // return: base file name (without extension)
+    static std::string GetBaseFileName( const std::string& path );
 
     // ---------------------------------------------------------------
     // get file path list/array from input directory
