@@ -23,12 +23,12 @@ void NIConfig::PrintConfigJSON()
 	printf("Calibration Factor               : %lf keV/ADC\n",cal_factor);
 	printf("Drift Velocity (Main Charge)     : %.2lf cm/us\n",driftV_main);
 	printf("Drift Velocity (Minority Charge) : %.2lf cm/us\n",driftV_mino);
-	printf("ANODE TOT(HG) Threshold          : %.1lf mV\n",tot_anode_threshold);
+	printf("ANODE HG Threshold               : %.1lf mV\n",hg_anode_threshold);
 	printf("ANODE LG Threshold               : %.1lf mV\n",lg_anode_threshold);
-	printf("CATHODE TOT(HG) Threshold        : %.1lf mV\n",tot_cathode_threshold);
+	printf("CATHODE HG Threshold             : %.1lf mV\n",hg_cathode_threshold);
 	printf("CATHODE LG Threshold             : %.1lf mV\n",lg_cathode_threshold);
 	printf("Minority Threshold               : %.1lf mV\n",minority_threshold);
-	printf("Minority Saerch ROI              : %.1lf ~ %.1lf us\n",minority_ROI_start,minority_ROI_end);
+	// printf("Minority Saerch ROI              : %.1lf ~ %.1lf us\n",minority_ROI_start,minority_ROI_end);
 	printf("----------------------------------------------\n");
 
 }
@@ -64,8 +64,8 @@ bool NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.tot_anode_threshold")){
-		this->tot_anode_threshold = pt.get<double>("config.tot_anode_threshold");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.hg_anode_threshold")){
+		this->hg_anode_threshold = pt.get<double>("config.hg_anode_threshold");
 	}else{
 	}
 
@@ -74,8 +74,8 @@ bool NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.tot_cathode_threshold")){
-		this->tot_cathode_threshold = pt.get<double>("config.tot_cathode_threshold");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.hg_cathode_threshold")){
+		this->hg_cathode_threshold = pt.get<double>("config.hg_cathode_threshold");
 	}else{
 	}
 
@@ -89,13 +89,13 @@ bool NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_start")){
-		this->minority_ROI_start = pt.get<double>("config.minority_ROI_start");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_range")){
+		this->minority_ROI_range = pt.get<double>("config.minority_ROI_range");
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_end")){
-		this->minority_ROI_end = pt.get<double>("config.minority_ROI_end");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_offset")){
+		this->minority_ROI_offset = pt.get<double>("config.minority_ROI_offset");
 	}else{
 	}
 

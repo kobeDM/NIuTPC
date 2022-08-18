@@ -71,13 +71,13 @@ int main(int argc,char *argv[]){
 	double driftV_main           = ni_conf->driftV_main;
 	double driftV_mino           = ni_conf->driftV_mino;
 	double calc_abs_z_param      = driftV_main*driftV_mino/(driftV_mino-driftV_main);
-	double tot_anode_threshold   = ni_conf->tot_anode_threshold;
+	double hg_anode_threshold    = ni_conf->hg_anode_threshold;
 	double lg_anode_threshold    = ni_conf->lg_anode_threshold;
-	double tot_cathode_threshold = ni_conf->tot_cathode_threshold;
+	double hg_cathode_threshold  = ni_conf->hg_cathode_threshold;
 	double lg_cathode_threshold  = ni_conf->lg_cathode_threshold;
 	double minority_threshold    = ni_conf->minority_threshold;
-	double minority_ROI_start    = ni_conf->minority_ROI_start;
-	double minority_ROI_end      = ni_conf->minority_ROI_end;
+	double minority_ROI_range    = ni_conf->minority_ROI_range;
+	double minority_ROI_offset   = ni_conf->minority_ROI_offset;
 
 
 	//++++++++++++++++++++++++++++++++++++++++++
@@ -362,7 +362,7 @@ int main(int argc,char *argv[]){
 			
 			for(int k=0;k<SAMPLING_NUM;k++){
 				//anode
-				if(a_hg_adc.at(j).at(k)-pedestal_a_hg[j] > tot_anode_threshold){
+				if(a_hg_adc.at(j).at(k)-pedestal_a_hg[j] > hg_anode_threshold){
 					if(hg_a_rise_flag==0){
 						hg_a_rise_flag=1;
 						hg_a_mainrise_time = k/SAMPLING_HELZ*1e6;
@@ -374,7 +374,7 @@ int main(int argc,char *argv[]){
 				}
 				if(hg_a_pulse_max < a_hg_adc.at(j).at(k)-pedestal_a_hg[j]){ //use HG
 					hg_a_pulse_max = a_hg_adc.at(j).at(k)-pedestal_a_hg[j];
-					if(hg_a_pulse_max>tot_anode_threshold){
+					if(hg_a_pulse_max>hg_anode_threshold){
 						hg_a_mainpeak_time=k/SAMPLING_HELZ*1e6;
 					}
 				}
@@ -385,7 +385,7 @@ int main(int argc,char *argv[]){
 					}
 				}
 				//cathode
-				if(c_hg_adc.at(j).at(k)-pedestal_c_hg[j] < tot_cathode_threshold){
+				if(c_hg_adc.at(j).at(k)-pedestal_c_hg[j] < hg_cathode_threshold){
 					if(hg_c_rise_flag==0){
 						hg_c_rise_flag=1;
 						hg_c_mainrise_time = k/SAMPLING_HELZ*1e6;
@@ -397,7 +397,7 @@ int main(int argc,char *argv[]){
 				}
 				if(hg_c_pulse_max > c_hg_adc.at(j).at(k)-pedestal_c_hg[j]){ //use HG
 					hg_c_pulse_max = c_hg_adc.at(j).at(k)-pedestal_c_hg[j];
-					if(hg_c_pulse_max<tot_cathode_threshold){
+					if(hg_c_pulse_max<hg_cathode_threshold){
 						hg_c_mainpeak_time=k/SAMPLING_HELZ*1e6;
 					}
 				}
@@ -407,20 +407,24 @@ int main(int argc,char *argv[]){
 						lg_c_mainpeak_time=k/SAMPLING_HELZ*1e6;
 					}
 				}
+
 				h_mino_search->SetBinContent(k,a_hg_adc[j][k]-pedestal_a_hg[j]);//anode only
 			}
 
 			//++++++++++++++++++++++++++++++++++++++++++
 			//  Minority Peak analysis
+            //  note: LG is used only for time search. HG is used for peak search
 			//++++++++++++++++++++++++++++++++++++++++++
 			double this_mino_time=-1;
-			int ROI_min_bin = h_mino_search->FindBin(lg_a_mainpeak_time - minority_ROI_end);//us
-			int ROI_max_bin = h_mino_search->FindBin(lg_a_mainpeak_time - minority_ROI_start);//us
+            double ROI_min = lg_a_mainpeak_time - minority_ROI_offset - minority_ROI_range;
+            double ROI_max = lg_a_mainpeak_time - minority_ROI_offset;
+			int ROI_min_bin = h_mino_search->FindBin(ROI_min);//us
+			int ROI_max_bin = h_mino_search->FindBin(ROI_max);//us
 			int ROI_bins = ROI_max_bin - ROI_min_bin + 1;
-			if(lg_a_mainpeak_time==-1){
+			if(lg_a_mainpeak_time<-1){
 				//skip
 			}else{
-				TH1D* h_ROI = new TH1D("h_ROI","h_ROI",ROI_bins,lg_a_mainpeak_time-minority_ROI_end,lg_a_mainpeak_time-minority_ROI_start);
+				TH1D* h_ROI = new TH1D("h_ROI","h_ROI",ROI_bins,ROI_min,ROI_max);
 				for(int k=0;k<ROI_max_bin;k++){
 					h_ROI->SetBinContent(k,h_mino_search->GetBinContent(ROI_min_bin+k));
 				}
@@ -429,7 +433,6 @@ int main(int argc,char *argv[]){
 				double* some_mino_time   = s->GetPositionX();
 				double* some_mino_height = s->GetPositionY();
 				double mino_peak_max =0;
-				double mino_dt_min = minority_ROI_end;
 				for(int pks=0;pks<find_mino_peak;pks++){
 					if(minority_threshold > some_mino_height[pks])continue;
 					//maximum method
