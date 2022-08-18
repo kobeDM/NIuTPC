@@ -78,13 +78,13 @@ int main(int argc,char *argv[]){
 	double driftV_main           = ni_conf->driftV_main;
 	double driftV_mino           = ni_conf->driftV_mino;
 	double calc_abs_z_param      = driftV_main*driftV_mino/(driftV_mino-driftV_main);
-	double tot_anode_threshold   = ni_conf->tot_anode_threshold;
+	double hg_anode_threshold    = ni_conf->hg_anode_threshold;
 	double lg_anode_threshold    = ni_conf->lg_anode_threshold;
-	double tot_cathode_threshold = ni_conf->tot_cathode_threshold;
+	double hg_cathode_threshold  = ni_conf->hg_cathode_threshold;
 	double lg_cathode_threshold  = ni_conf->lg_cathode_threshold;
 	double minority_threshold    = ni_conf->minority_threshold;
-	double minority_ROI_start    = ni_conf->minority_ROI_start;
-	double minority_ROI_end      = ni_conf->minority_ROI_end;
+	double minority_ROI_range    = ni_conf->minority_ROI_range;
+	double minority_ROI_offset   = ni_conf->minority_ROI_offset;
 
 	//event number
 	int ev_num = atoi(argv[3]);
@@ -313,7 +313,7 @@ int main(int argc,char *argv[]){
 		TH1D* h_mino_search = new TH1D("h_mino_search","h_mino_search",SAMPLING_NUM,0,SAMPLING_NUM/SAMPLING_HELZ*1e6);
 		for(int k=0;k<SAMPLING_NUM;k++){
 			//anode
-			if(a_hg_adc.at(j).at(k)-pedestal_a_hg[j] > tot_anode_threshold){
+			if(a_hg_adc.at(j).at(k)-pedestal_a_hg[j] > hg_anode_threshold){
 				if(hg_a_rise_flag==0){
 					hg_a_rise_flag=1;
 					hg_a_mainrise_time = k/SAMPLING_HELZ*1e6;
@@ -324,7 +324,7 @@ int main(int argc,char *argv[]){
 			}
 			if(hg_a_pulse_max < a_hg_adc.at(j).at(k)-pedestal_a_hg[j]){ //use HG
 				hg_a_pulse_max = a_hg_adc.at(j).at(k)-pedestal_a_hg[j];
-				if(hg_a_pulse_max>tot_anode_threshold){
+				if(hg_a_pulse_max>hg_anode_threshold){
 					hg_a_mainpeak_time=k/SAMPLING_HELZ*1e6;
 				}
 			}
@@ -335,7 +335,7 @@ int main(int argc,char *argv[]){
 				}
 			}
 			//cathode
-			if(c_hg_adc.at(j).at(k)-pedestal_c_hg[j] < tot_cathode_threshold){
+			if(c_hg_adc.at(j).at(k)-pedestal_c_hg[j] < hg_cathode_threshold){
 				if(hg_c_rise_flag==0){
 					hg_c_rise_flag=1;
 					hg_c_mainrise_time = k/SAMPLING_HELZ*1e6;
@@ -346,7 +346,7 @@ int main(int argc,char *argv[]){
 			}
 			if(hg_c_pulse_max > c_hg_adc.at(j).at(k)-pedestal_c_hg[j]){ //use HG
 				hg_c_pulse_max = c_hg_adc.at(j).at(k)-pedestal_c_hg[j];
-				if(hg_c_pulse_max<tot_cathode_threshold){
+				if(hg_c_pulse_max<hg_cathode_threshold){
 					hg_c_mainpeak_time=k/SAMPLING_HELZ*1e6;
 				}
 			}
@@ -362,13 +362,17 @@ int main(int argc,char *argv[]){
 		//  Minority Peak analysis
 		//++++++++++++++++++++++++++++++++++++++++++
 		double this_mino_time=-1;
-		int ROI_min_bin = h_mino_search->FindBin(lg_a_mainpeak_time - minority_ROI_end);//us
-		int ROI_max_bin = h_mino_search->FindBin(lg_a_mainpeak_time - minority_ROI_start);//us
+        double ROI_min = lg_a_mainpeak_time - minority_ROI_offset - minority_ROI_range;
+        double ROI_max = lg_a_mainpeak_time - minority_ROI_offset;
+		int ROI_min_bin = h_mino_search->FindBin(ROI_min);//us
+		int ROI_max_bin = h_mino_search->FindBin(ROI_max);//us
 		int ROI_bins = ROI_max_bin - ROI_min_bin + 1;
+        std::cout << ROI_min << "\t" << ROI_max << "\t" << lg_a_mainpeak_time << std::endl;
+
 		if(lg_a_mainpeak_time==-1){
 			//skip
 		}else{
-			TH1D* h_ROI = new TH1D("h_ROI","h_ROI",ROI_bins,lg_a_mainpeak_time-minority_ROI_end,lg_a_mainpeak_time-minority_ROI_start);
+			TH1D* h_ROI = new TH1D("h_ROI","h_ROI",ROI_bins,ROI_min,ROI_max);
 			for(int k=0;k<ROI_max_bin;k++){
 				h_ROI->SetBinContent(k,h_mino_search->GetBinContent(ROI_min_bin+k));
 			}
@@ -377,24 +381,26 @@ int main(int argc,char *argv[]){
 			double* some_mino_time   = s->GetPositionX();
 			double* some_mino_height = s->GetPositionY();
 			double mino_peak_max =0;
-			double mino_dt_min = minority_ROI_end;
+			double mino_dt_min = ROI_min;
 			for(int pks=0;pks<find_mino_peak;pks++){
+
 				if(minority_threshold > some_mino_height[pks])continue;
 				//maxmum method
-				/*
-                  if(some_mino_height[pks]>mino_peak_max){
-                  g_mino_search->SetPoint(mino_search_point,some_mino_time[pks],some_mino_height[pks]-(63-j)*50);
-                  mino_search_point++;
-                  this_mino_time = some_mino_time[pks];
-                  mino_peak_max = some_mino_height[pks];
-                  }
-				*/
-				if(lg_a_mainpeak_time-some_mino_time[pks]<mino_dt_min){
-					g_mino_search->SetPoint(mino_search_point,some_mino_time[pks],some_mino_height[pks]-(63-j)*50);
-					mino_search_point++;
-					this_mino_time = some_mino_time[pks];
-					mino_dt_min = lg_a_mainpeak_time-some_mino_time[pks]; 
-				}
+				
+                if(some_mino_height[pks]>mino_peak_max){
+                    g_mino_search->SetPoint(mino_search_point,some_mino_time[pks],some_mino_height[pks]-(31-j)*100);
+                    std::cout << j << "\t" << some_mino_time[pks] << "\t" << some_mino_height[pks] << std::endl;
+                    mino_search_point++;
+                    this_mino_time = some_mino_time[pks];
+                    mino_peak_max = some_mino_height[pks];
+                }
+
+				// if(lg_a_mainpeak_time-some_mino_time[pks]<mino_dt_min){
+				// 	g_mino_search->SetPoint(mino_search_point,some_mino_time[pks],some_mino_height[pks]-(63-j)*50);
+				// 	mino_search_point++;
+				// 	this_mino_time = some_mino_time[pks];
+				// 	mino_dt_min = lg_a_mainpeak_time-some_mino_time[pks]; 
+				// }
 			}
 			s->Delete();
 			h_ROI->Delete();
@@ -439,14 +445,14 @@ int main(int argc,char *argv[]){
 	g_a_main_fall->SetMarkerColor(kGreen);
 	g_mino_peak->SetMarkerStyle(8);
 	g_mino_peak->SetMarkerSize(0.3);
-	g_mino_peak->SetMarkerColor(kPink);
+	g_mino_peak->SetMarkerColor(kRed);
 	h_strip_a_hg->GetXaxis()->SetTitle("clock(1clock=0.4us)");
 	h_strip_a_hg->GetYaxis()->SetTitle("CH");
 	h_strip_a_hg->Draw("colz");
-	// g_a_hg_main_peak->Draw("same p");
+	g_a_hg_main_peak->Draw("same p");
 	// g_a_main_rise->Draw("same p");
 	// g_a_main_fall->Draw("same p");
-	// g_mino_peak->Draw("same p");
+	g_mino_peak->Draw("same p");
 	
 	c_strip->cd(2);
 	g_a_lg_main_peak->SetMarkerStyle(8);
@@ -456,7 +462,7 @@ int main(int argc,char *argv[]){
 	h_strip_a_lg->GetYaxis()->SetTitle("CH");
 	h_strip_a_lg->GetZaxis()->SetRangeUser(-10.0, 10.0);
 	h_strip_a_lg->Draw("colz");
-	// g_a_lg_main_peak->Draw("same p");
+	g_a_lg_main_peak->Draw("same p");
 	
 	c_strip->cd(3);
 	g_c_hg_main_peak->SetMarkerStyle(8);
@@ -471,9 +477,9 @@ int main(int argc,char *argv[]){
 	h_strip_c_hg->GetXaxis()->SetTitle("clock(1clock=0.4us)");
 	h_strip_c_hg->GetYaxis()->SetTitle("CH");
 	h_strip_c_hg->Draw("colz");
-	// g_c_hg_main_peak->Draw("same p");
-	// g_c_main_rise->Draw("same p");
-	// g_c_main_fall->Draw("same p");
+	g_c_hg_main_peak->Draw("same p");
+	g_c_main_rise->Draw("same p");
+	g_c_main_fall->Draw("same p");
 	
 	c_strip->cd(4);
 	g_c_lg_main_peak->SetMarkerStyle(8);
@@ -482,7 +488,7 @@ int main(int argc,char *argv[]){
 	h_strip_c_lg->GetXaxis()->SetTitle("clock(1clock=0.4us)");
 	h_strip_c_lg->GetYaxis()->SetTitle("CH");
 	h_strip_c_lg->Draw("colz");
-	// g_c_lg_main_peak->Draw("same p");
+	g_c_lg_main_peak->Draw("same p");
 
     c_strip->SaveAs( "recoil.png" );
     // c_strip->SaveAs( Form( "output6/strip_%d.png", ev_num ) );
@@ -492,20 +498,23 @@ int main(int argc,char *argv[]){
 	// c_wave->cd(1)->DrawFrame(0,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
 	// c_wave->cd(2)->DrawFrame(0,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
 
+	c_wave->cd(1)->DrawFrame(900,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
+	c_wave->cd(2)->DrawFrame(900,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
+
 
 	// c_wave->cd(1)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
 	// c_wave->cd(2)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
 
-	c_wave->cd(1)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
-	c_wave->cd(2)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
+	// c_wave->cd(1)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
+	// c_wave->cd(2)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
 
 
 	// c_wave->cd(1)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
 	// c_wave->cd(2)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
 
 	// c_wave->cd(2)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
-	c_wave->cd(3)->DrawFrame(0,-400,1600,400,"LG waveform;us(4000sampling);mV");
-	c_wave->cd(4)->DrawFrame(0,-400,1600,400,"LG waveform;us(4000sampling);mV");
+	c_wave->cd(3)->DrawFrame(900,-400,1600,400,"LG waveform;us(4000sampling);mV");
+	c_wave->cd(4)->DrawFrame(900,-400,1600,400,"LG waveform;us(4000sampling);mV");
 	for(int i=0;i<N_CHANNEL;i++){
 		c_wave->cd(1); if( mask_a_hg[i] == false ) g_a_hg[i]->Draw("p same");
 		c_wave->cd(3); if( mask_a_lg[i] == false ) g_a_lg[i]->Draw("p same");
@@ -513,9 +522,10 @@ int main(int argc,char *argv[]){
 		c_wave->cd(4); if( mask_c_lg[i] == false ) g_c_lg[i]->Draw("p same");
 	}
 	c_wave->cd(1);
-	g_mino_search->SetMarkerStyle(8);
+	g_mino_search->SetMarkerStyle(20);
 	g_mino_search->SetMarkerSize(0.5);
-	g_mino_search->SetMarkerColor(kGreen+3);
+	// g_mino_search->SetMarkerColor(kGreen+3);
+	g_mino_search->SetMarkerColor(kRed);
 	g_mino_search->Draw("same p");
 
     c_wave->SaveAs( "wave.png" );
