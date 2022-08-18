@@ -89,10 +89,16 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     TH2D* pHistHitmapYMaxMin = new TH2D( "histHitmapYMaxMin", "histHitmapYMaxMin", 100, -1.5, 1.5, 100, -1.5,  1.5 );
 
     TH2D* pHistEnergyToT    = new TH2D( "histEnergyToT", "histEnergyToT", 100, 0.0, 400.0, 100, 0.0, 2000.0 );
+    TH2D* pHistEnergyToTCut    = new TH2D( "histEnergyToTCut",   "histEnergyToTCut",   100, 0.0, 400.0, 100, 0.0, 2000.0 );
+
     TH2D* pHistEnergyToTEn  = new TH2D( "histEnergyToTEn", "histEnergyToTEn", 100, 0.0, 400.0, 100, 0.0, 10.0 );
+    TH2D* pHistEnergyToTEnCut  = new TH2D( "histEnergyToTEnCut", "histEnergyToTEnCut", 100, 0.0, 400.0, 100, 0.0, 10.0 );
+
     TH2D* pHistEnergyLengthXZ = new TH2D( "histEnergyLengthXZ", "histEnergyLengthXZ", 100, 0.0, 400.0, 100, 0.0, 2.0 );
     TH2D* pHistEnergyLengthYZ = new TH2D( "histEnergyLengthYZ", "histEnergyLengthYZ", 100, 0.0, 400.0, 100, 0.0, 2.0 );
     TH2D* pHistEnergyLengthXY = new TH2D( "histEnergyLengthXY", "histEnergyLengthXY", 100, 0.0, 400.0, 100, 0.0, 2.0 );
+
+    TH2D* pHistEnergyLengthXZCut = new TH2D( "histEnergyLengthXZCut", "histEnergyLengthXZCut", 100, 0.0, 400.0, 100, 0.0, 2.0 );
 
     TH2D* pHistHitmapXY_cut = new TH2D( "histHitmapXY_cut", "histHitmapXY_cut", 100, -1.5, 1.5, 100, -1.5,  1.5 );
 
@@ -134,6 +140,7 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
 
     int totEvt = pTree->GetEntries( );
+    int selEvtAll = 0, selEvt50 = 0, selEvt100 = 0, selEvt200 = 0, selEvt400 = 0;
     for( int evt = 0; evt < totEvt; ++evt ) {
         NAUtil::PrintProgressBar( evt, totEvt );
         pTree->GetEntry( evt );
@@ -144,15 +151,7 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
         pHistHitmapXZ->Fill( ave_x, ave_z );
         pHistHitmapYZ->Fill( ave_y, ave_z );
 
-        double sumToT = 0.0;
-        int nHit = pVec_a_hg_mainrise_time->size( );
-        if( pVec_a_hg_mainfall_time->size( ) == nHit ) {
-            for( int i = 0; i < nHit; ++i ) {
-                sumToT += ( pVec_a_hg_mainfall_time->at( i ) - pVec_a_hg_mainrise_time->at( i ) );
-            }
-            pHistEnergyToT->Fill( a_hg_sum_charge * calFactor, sumToT );
-            pHistEnergyToTEn->Fill( a_hg_sum_charge * calFactor, sumToT/(a_hg_sum_charge * calFactor) );
-        }
+
         double xz_x_min = 1000.0, xz_x_max = -1000.0;
         double xz_z_min = 1000.0, xz_z_max = -1000.0;
         for( int i = 0; i < pVec_xz_x->size( ); ++i ) {
@@ -199,16 +198,47 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
         // if( fabs( ave_x ) < 0.8 && fabs( ave_y ) < 0.8 && a_hg_sum_charge * calFactor > 10.0 && xz_x_max < 1.0 && xz_x_min > -1.0 && yz_y_min > -1.0 && yz_y_max < 1.0 ) {
         // if( fabs( ave_x ) < 0.8 && fabs( ave_y ) < 0.8 && a_hg_sum_charge * calFactor > 100.0 && xz_x_max > 0.8 && xz_x_min < -0.8 ) {
         // if( lengthXZ < 1.5 && a_hg_sum_charge * calFactor > 100.0 )
-        if( xz_x_max > 1 && xz_x_min < 0 )
-            std::cout << Form("%d\t%lf\t%lf\t%lf\t%lf\t%lf",ev, a_hg_sum_charge * calFactor, lengthXZ, lengthXY, lengthX, lengthY) << std::endl;
+        // if( lengthXZ < 1.5 && a_hg_sum_charge * calFactor > 100.0 )
+        // if( xz_x_max > 1 && xz_x_min < 0 )
+        //     std::cout << Form("%d\t%lf\t%lf\t%lf\t%lf\t%lf",ev, a_hg_sum_charge * calFactor, lengthXZ, lengthXY, lengthX, lengthY) << std::endl;
+
+        if( xz_x_max > 1.1 && xz_x_min < 0.1 ) continue;
+        if( yz_y_max > 1.1 && yz_y_min < 1.2 ) continue;
+        
 
         pHistEnergyLengthXZ->Fill( a_hg_sum_charge * calFactor, lengthXZ );
         pHistEnergyLengthXY->Fill( a_hg_sum_charge * calFactor, lengthXY );
         pHistEnergyLengthYZ->Fill( a_hg_sum_charge * calFactor, lengthYZ );
 
+        double sumToT = 0.0;
+        int nHit = pVec_a_hg_mainrise_time->size( );
+        if( pVec_a_hg_mainfall_time->size( ) == nHit ) {
+            for( int i = 0; i < nHit; ++i ) {
+                sumToT += ( pVec_a_hg_mainfall_time->at( i ) - pVec_a_hg_mainrise_time->at( i ) );
+            }
+        }
+        pHistEnergyToT->Fill( a_hg_sum_charge * calFactor, sumToT );
+        pHistEnergyToTEn->Fill( a_hg_sum_charge * calFactor, sumToT/(a_hg_sum_charge * calFactor) );
+        
+        if( lengthXZ < 0.004 * a_hg_sum_charge * calFactor + 0.4 ) {
+            pHistEnergyToTCut->Fill( a_hg_sum_charge * calFactor, sumToT );
+            pHistEnergyToTEnCut->Fill( a_hg_sum_charge * calFactor, sumToT/(a_hg_sum_charge * calFactor) );
+            pHistEnergyLengthXZCut->Fill( a_hg_sum_charge * calFactor, lengthXZ );
+            if( a_hg_sum_charge * calFactor > 30.0 && a_hg_sum_charge * calFactor < 400.0 ) {
+                ++selEvtAll;
+                if     ( a_hg_sum_charge * calFactor < 50.0  ) ++selEvt50;
+                else if( a_hg_sum_charge * calFactor < 100.0 ) ++selEvt100;
+                else if( a_hg_sum_charge * calFactor < 200.0 ) ++selEvt200;
+                else if( a_hg_sum_charge * calFactor < 400.0 ) ++selEvt400;
+
+                std::cout << std::endl << "file ID: " << fileID << "\tevtID: " << ev << std::endl;
+            }
+            
+        }
+
         pHistEnergy->Fill( a_hg_sum_charge * calFactor );
         // if( lengthXZ > 2.0 || lengthYZ > 2.0 ) pHistEnergyCut->Fill( a_hg_sum_charge * calFactor );
-        // if( ( lengthXZ > 1.0 || lengthYZ > 1.0 ) && ( lengthXZ < 1.3 || lengthYZ < 1.3 ) ) pHistEnergyCut->Fill( a_hg_sum_charge * calFactor );
+        if( ( lengthXZ > 1.0 || lengthYZ > 1.0 ) && ( lengthXZ < 1.3 || lengthYZ < 1.3 ) ) pHistEnergyCut->Fill( a_hg_sum_charge * calFactor );
         // std::cout << "xmin= " << xz_x_min << ", xmax= " << xz_x_max << ", ymin= " << yz_y_min << ", ymax= " << yz_y_max << ", zmin= " << xz_z_min << ", zmax= " << xz_z_max << std::endl;
     }
     
@@ -297,6 +327,13 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     g_SRIM_F->Draw( "same" );
     g_SRIM_He->Draw( "same" );
     g_SRIM_H->Draw( "same" );
+
+    TF1 cutFunc( "cutFunc", "[0] + [1] * x", 0.0, 400.0 );
+    cutFunc.SetParameter( 0, 0.4 );
+    cutFunc.SetParameter( 1, 0.004 );
+    cutFunc.SetLineColor( kViolet );
+    cutFunc.SetLineWidth( 4 );
+    cutFunc.Draw( "same" );
     cvs.SaveAs( Form( "%s/energyLengthXZ.png", outputDir.c_str( ) ) );
 
     pHistEnergyLengthYZ->SetXTitle( "Energy [keV]" );
@@ -316,6 +353,35 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     g_SRIM_He->Draw( "same" );
     g_SRIM_H->Draw( "same" );
     cvs.SaveAs( Form( "%s/energyLengthXY.png", outputDir.c_str( ) ) );
+
+
+
+    pHistEnergyLengthXZCut->SetXTitle( "Energy [keV]" );
+    pHistEnergyLengthXZCut->SetYTitle( "Length [cm]" );
+    pHistEnergyLengthXZCut->SetZTitle( "Events" );
+    pHistEnergyLengthXZCut->Draw( "colz" );
+    g_SRIM_F->Draw( "same" );
+    g_SRIM_He->Draw( "same" );
+    g_SRIM_H->Draw( "same" );
+    cvs.SaveAs( Form( "%s/energyLengthXZCut.png", outputDir.c_str( ) ) );
+
+    pHistEnergyToTCut->SetXTitle( "Energy [keV]" );
+    pHistEnergyToTCut->SetYTitle( "#SigmaToT [us]" );
+    pHistEnergyToTCut->SetZTitle( "Events" );
+    pHistEnergyToTCut->Draw( "colz" );
+    cvs.SaveAs( Form( "%s/energyToTCut.png", outputDir.c_str( ) ) );
+
+    pHistEnergyToTEnCut->SetXTitle( "Energy [keV]" );
+    pHistEnergyToTEnCut->SetYTitle( "#SigmaToT / Energy [us/keV]" );
+    pHistEnergyToTEnCut->SetZTitle( "Events" );
+    pHistEnergyToTEnCut->Draw( "colz" );
+    cvs.SaveAs( Form( "%s/energyToTEnCut.png", outputDir.c_str( ) ) );
+
+    std::cout << "The number of events (30  < E < 50  keV)\t:\t" << selEvt50  << std::endl;
+    std::cout << "The number of events (50  < E < 100 keV)\t:\t" << selEvt100 << std::endl;
+    std::cout << "The number of events (100 < E < 200 keV)\t:\t" << selEvt200 << std::endl;
+    std::cout << "The number of events (200 < E < 400 keV)\t:\t" << selEvt400 << std::endl;
+    std::cout << "The number of events (30 < E keV)\t:\t"        << selEvtAll << std::endl;
 
     return;
 }
