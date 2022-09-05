@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<configInfo>
+  <daqOperator>
+    <hostAddr>127.0.0.1</hostAddr>
+  </daqOperator>
+  <daqGroups>
+    <daqGroup gid="group0">
+	  <components>
+		<component cid="NIuTPCReader00">
+          <hostAddr>127.0.0.1</hostAddr>
+          <hostPort>50000</hostPort>
+          <instName>NIuTPCReader00.rtc</instName>
+          <execPath>/home/daq/repo/NIuTPC/DAQ/NIuTPCReader0/NIuTPCReader0Comp</execPath>
+
+          <confFile>/tmp/daqmw/rtc.conf</confFile>
+          <startOrd>2</startOrd>	       
+	      <inPorts>
+	      </inPorts>
+          <outPorts>
+            <outPort>niutpcreader_out</outPort>
+          </outPorts>
+          <params>
+            <param pid="srcAddr">192.168.14.11</param>
+            <param pid="srcPort">24</param>
+            <param pid="delay">3000</param>
+            <param pid="thinning">8</param>		  
+            <param pid="setRegisters">yes</param>
+            <param pid="windowSize">4000</param>		  		  		  
+          </params>
+        </component>
+		
+		<component cid="NIuTPCLogger0">
+          <hostAddr>127.0.0.1</hostAddr>
+          <hostPort>50000</hostPort>
+          <instName>NIuTPCLogger0.rtc</instName>
+          <execPath>/home/daq/repo/NIuTPC/DAQ/NIuTPCLogger/NIuTPCLoggerComp</execPath>
+          <confFile>/tmp/daqmw/rtc.conf</confFile>
+          <startOrd>1</startOrd>
+          <inPorts>
+            <inPort from="NIuTPCReader00:niutpcreader_out">niutpclogger_in</inPort>
+          </inPorts>
+          <outPorts/>
+          <params>
+            <param pid="dirName">/home/daq/data/</param>
+            <param pid="isLogging">yes</param>
+            <param pid="maxFileSizeInMegaByte">1024</param>
+            <param pid="appendTimestamp">YES</param>
+            
+		  </params>
+        </component>
+	  </components>
+    </daqGroup>
+  </daqGroups>
+</configInfo>
