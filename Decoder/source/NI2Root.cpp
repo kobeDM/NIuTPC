@@ -196,14 +196,9 @@ int main(int argc,char *argv[]){
 		ev_tmp.hg_adc = tmp_hg_adc;
 		ev_tmp.lg_adc = tmp_lg_adc;
 		if(module_num==0){
-			cathode_info_0[trigger-first_trigger_num+10] = ev_tmp;
-		}
-		else if(module_num==1){
-			cathode_info_1[trigger-first_trigger_num+10] = ev_tmp;
-		}
-		else if(module_num==2){
+            // add anode_info_1 for the 3 board DAQ
 			anode_info_0[trigger-first_trigger_num+10]   = ev_tmp;
-
+            
             // add anode_info_1 for the 3 board DAQ
             vector< vector<double> > a1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
             vector< vector<double> > a1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
@@ -214,25 +209,47 @@ int main(int argc,char *argv[]){
             ev_a1.hg_adc = a1_hg_adc;
             ev_a1.lg_adc = a1_lg_adc;
             anode_info_1[trigger-first_trigger_num+10]   = ev_a1;
+
+            vector< vector<double> > c0_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            vector< vector<double> > c0_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            event_info ev_c0;
+            ev_c0.module_num = module_num;
+            ev_c0.timestamp = timestamp;
+            ev_c0.trigger = trigger;
+            ev_c0.hg_adc = c0_hg_adc;
+            ev_c0.lg_adc = c0_lg_adc;
+            cathode_info_0[trigger-first_trigger_num+10]   = ev_c0;
+
+            vector< vector<double> > c1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            vector< vector<double> > c1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            event_info ev_c1;
+            ev_c1.module_num = module_num;
+            ev_c1.timestamp = timestamp;
+            ev_c1.trigger = trigger;
+            ev_c1.hg_adc = c1_hg_adc;
+            ev_c1.lg_adc = c1_lg_adc;
+            cathode_info_1[trigger-first_trigger_num+10]   = ev_c1;
+		}
+		else if(module_num==1){
+		}
+		else if(module_num==2){
 		}
 		else if(module_num==3){
-            // should not be entered...
-			// anode_info_1[trigger-first_trigger_num+10]   = ev_tmp;
 		}
 		current_size += double(HEADER_SIZE + length + 4);
 		ev_num++;
 	}
 	
 	// double nevent = double(ev_num/4);
-	double nevent = double(ev_num/3);
+	double nevent = double(ev_num/1);
 	ev_num=0;
 	std::cout<<std::endl;
 
 	for(int i=0;i<anode_info_0.size();i++){
-		if(anode_info_0[i].module_num==-1 || 
+		if(anode_info_0[i].module_num==-1 //|| 
            // anode_info_1[i].module_num==-1 || 
-           cathode_info_0[i].module_num==-1 || 
-           cathode_info_1[i].module_num==-1 
+           // cathode_info_0[i].module_num==-1 || 
+           // cathode_info_1[i].module_num==-1 
            ){
 			//std::cout << "skip trigger ev" <<std::endl;
 			continue;
