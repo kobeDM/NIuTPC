@@ -54,7 +54,7 @@ void calMonitor( const std::string& inputFileList, const std::string& configFile
         std::cout << perID << std::endl;
 
         TFile file( filePath.c_str( ) );
-        TTree* pTree = dynamic_cast< TTree* >( file.Get( "anal_tree" ) );
+        TTree* pTree = dynamic_cast< TTree* >( file.Get( "ana_tree" ) );
         if( pTree == nullptr ) continue;
         
         pTree->SetBranchAddress( "eventID",         &ev              );

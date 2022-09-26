@@ -67,7 +67,7 @@ int main(int argc,char *argv[]){
 	//  read root file 
 	//++++++++++++++++++++++++++++++++++++++++++
 	std::string dirfilename=argv[1];
-	std::string::size_type index = dirfilename.find("_anal.root");
+	std::string::size_type index = dirfilename.find("_ana.root");
 	if( index == std::string::npos ) { 
 		std::cout << "Failure!!!" << std::endl;
 		return 1;
@@ -116,7 +116,7 @@ int main(int argc,char *argv[]){
 		return 1;
 	}
 	
-	TTree* intree = (TTree*)f->Get("anal_tree");
+	TTree* intree = (TTree*)f->Get("ana_tree");
 	int nevent=intree->GetEntries();
 	std::cerr << "NumberOfEvents : " << nevent << std::endl;
 	int intree_ev_num;

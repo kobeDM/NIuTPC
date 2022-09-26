@@ -5,7 +5,7 @@ set(CMAKE_VERBOSE_MAKEFILE 1)
 
 project(ROOT_COMPILE)
 
-set(Targets NI2Root Debug NIEventShow NIAnal NIVis)
+set(Targets NI2Root Debug NIEventShow NIAna NIVis)
 #set(Targets ToRootFour Show EventShow Offset Height PeakTime RiseFallTime)
 # You need to tell CMake where to find the ROOT installation. This can be done in a number of ways:
 #   - ROOT built with classic configure/make use the provided $ROOTSYS/etc/cmake/FindROOT.cmake
