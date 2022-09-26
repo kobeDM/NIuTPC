@@ -68,6 +68,7 @@ int main(int argc,char *argv[]){
 	NIConfig* ni_conf = new NIConfig();
 	ni_conf->ReadConfigJSON(conffilename);
 	int    offset_sampling       = ni_conf->offset_sampling;
+	double strip_pitch           = ni_conf->strip_pitch;
 	double driftV_main           = ni_conf->driftV_main;
 	double driftV_mino           = ni_conf->driftV_mino;
 	double calc_abs_z_param      = driftV_main*driftV_mino/(driftV_mino-driftV_main);
@@ -111,9 +112,9 @@ int main(int argc,char *argv[]){
 	std::string filename = NAUtil::GetFileName( dirfilename );
 	std::string basefilename = NAUtil::GetBaseFileName( dirfilename );
     
-	std::string outfilename = basefilename + "_anal.root";
+	std::string outfilename = basefilename + "_ana.root";
 	TFile *fout=new TFile(outfilename.c_str(),"recreate");
-	TTree* outtree = new TTree("anal_tree","anal_tree");
+	TTree* outtree = new TTree("ana_tree","ana_tree");
 
 	int outtree_event_ID;
 	int outtree_file_ID;
@@ -460,7 +461,7 @@ int main(int argc,char *argv[]){
 			//++++++++++++++++++++++++++++++++++++++++++
 			//main peak triggered
 			if(hg_a_mainpeak_time>-1){
-				double this_xz_x = (29-j+0.5)*0.04;//cm
+				double this_xz_x = (29-j+0.5)*strip_pitch*0.0001;//cm
 				double this_xz_z = lg_a_mainpeak_time*driftV_main*1e-3;//cm
 				//std::cout << "x : " << this_xz_x << " cm , z:" << this_xz_z << " cm" <<std::endl;
 				//anode
@@ -494,7 +495,7 @@ int main(int argc,char *argv[]){
 				}
 			}
 			if(hg_c_mainpeak_time>-1){
-				double this_yz_y = (29-j+0.5)*0.04;//cm
+				double this_yz_y = (29-j+0.5)*strip_pitch*0.0001;//cm
 				double this_yz_z = lg_c_mainpeak_time*driftV_main*1e-3;//cm
 
 				//cathode
@@ -573,59 +574,6 @@ int main(int argc,char *argv[]){
 		//for debug
 		h_31ch_32ch_dt->Fill(peak_time_32ch-peak_time_31ch);
 	}
-
-	//++++++++++++++++++++++++++++++++++++++++++
-	//  Draw
-	//++++++++++++++++++++++++++++++++++++++++++
-    /*
-      gStyle->SetPalette(kRainBow);
-      TCanvas* c_vis = new TCanvas("c_vis","c_vis",0,0,1000,1000);
-      c_vis->Divide(3,3);
-      c_vis->cd(2);
-      h_sum_pulse_height->GetXaxis()->SetTitle("sum_pulse_height(mV)");
-      h_sum_pulse_height->GetYaxis()->SetTitle("counts");
-      h_sum_pulse_height->Draw();
-      c_vis->cd(5);
-      h_sum_charge->GetXaxis()->SetTitle("sum_charge");
-      h_sum_charge->GetYaxis()->SetTitle("counts");
-      h_sum_charge->Draw();
-      c_vis->cd(4);
-      h_xz->GetXaxis()->SetTitle("x(cm)");
-      h_xz->GetYaxis()->SetTitle("z(cm)");
-      h_xz->Draw("colz");
-      c_vis->cd(7);
-      h_xy->GetXaxis()->SetTitle("x(cm)");
-      h_xy->GetYaxis()->SetTitle("y(cm)");
-      h_xy->Draw("colz");
-      c_vis->cd(8);
-      h_yz->GetXaxis()->SetTitle("z(cm)");
-      h_yz->GetYaxis()->SetTitle("y(cm)");
-      h_yz->Draw("colz");
-
-      TCanvas* c_mino = new TCanvas("c_mino","c_mino",0,0,1000,1000);
-      c_mino->Divide(3,3);
-      c_mino->cd(5);
-      h_strip_dt->GetXaxis()->SetTitle("main - minority(us)");
-      h_strip_dt->GetYaxis()->SetTitle("counts");
-      h_strip_dt->Draw();
-      c_mino->cd(8);
-      h_strip_abs_z->GetXaxis()->SetTitle("absolute z(cm)");
-      h_strip_abs_z->GetYaxis()->SetTitle("counts");
-      h_strip_abs_z->Draw();
-      c_mino->cd(6);
-      h_dt->GetXaxis()->SetTitle("main - minority(us)");
-      h_dt->GetYaxis()->SetTitle("counts");
-      h_dt->Draw();
-      c_mino->cd(9);
-      h_abs_z->GetXaxis()->SetTitle("absolute z(cm)");
-      h_abs_z->GetYaxis()->SetTitle("counts");
-      h_abs_z->Draw();
-
-      TCanvas* c_debug = new TCanvas("c_debug","c_debug",0,0,1000,1000);
-      h_31ch_32ch_dt->GetXaxis()->SetTitle("#Delta clock(2.5Mhz)");
-      h_31ch_32ch_dt->GetYaxis()->SetTitle("counts");
-      h_31ch_32ch_dt->Draw();
-    */
 	outtree->Write();
 	// app.Run();
 	//++++++++++++++++++++++++++++++++++++++++++
@@ -633,7 +581,7 @@ int main(int argc,char *argv[]){
 	//++++++++++++++++++++++++++++++++++++++++++
 	fout->Close();
 	std::cout << "" <<std::endl;
-	std::cout << "--- anal end ---" <<std::endl;
+	std::cout << "--- analysis end ---" <<std::endl;
 
 	// app.Run();
 
