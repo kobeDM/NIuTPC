@@ -20,6 +20,7 @@ void NIConfig::PrintConfigJSON()
 	
 	printf("---------- configuration parameters ----------\n");
 	printf("Waveform Offset Calc Sampling    : %d clock\n",offset_sampling);
+	printf("Strip Pitch                      : %lf um\n",strip_pitch);
 	printf("Calibration Factor               : %lf keV/ADC\n",cal_factor);
 	printf("Drift Velocity (Main Charge)     : %.2lf cm/us\n",driftV_main);
 	printf("Drift Velocity (Minority Charge) : %.2lf cm/us\n",driftV_mino);
@@ -46,6 +47,11 @@ bool NIConfig::ReadConfigJSON(std::string conffilename)
 
 	if(boost::optional<int> buf = pt.get_optional<int>("config.offset_sampling")){
 		this->offset_sampling = pt.get<int>("config.offset_sampling");
+	}else{
+	}
+
+	if(boost::optional<double> buf = pt.get_optional<double>("config.strip_pitch")){
+		this->cal_factor = pt.get<double>("config.strip_pitch");
 	}else{
 	}
 
