@@ -1,6 +1,7 @@
 {
 	"config":{
 		"offset_sampling":1000, // clock
+		"strip_pitch":400.0, //um
         "cal_factor":0.000237, // calibration factor
 		"hg_anode_threshold":130, //mV
 		"hg_cathode_threshold":-30, //mV
