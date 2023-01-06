@@ -28,7 +28,9 @@ void NIConfig::PrintConfigJSON()
 	printf("CATHODE HG Threshold             : %.1lf mV\n",hg_cathode_threshold);
 	printf("CATHODE LG Threshold             : %.1lf mV\n",lg_cathode_threshold);
 	printf("Minority Threshold               : %.1lf mV\n",minority_threshold);
-	// printf("Minority Saerch ROI              : %.1lf ~ %.1lf us\n",minority_ROI_start,minority_ROI_end);
+	printf("Minority ROI range               : %.1lf us\n",minority_ROI_range);
+	printf("Minority ROI offset              : %.1lf us\n",minority_ROI_offset);
+	printf("Is Alpha Calibration?            : %d (1: yes, 0: no)\n",is_alpha_calib);
 	printf("----------------------------------------------\n");
 
 }
@@ -96,6 +98,11 @@ bool NIConfig::ReadConfigJSON(std::string conffilename)
 
 	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_offset")){
 		this->minority_ROI_offset = pt.get<double>("config.minority_ROI_offset");
+	}else{
+	}
+
+	if(boost::optional<int> buf = pt.get_optional<int>("config.is_alpha_calib")){
+		this->is_alpha_calib = pt.get<int>("config.is_alpha_calib");
 	}else{
 	}
 

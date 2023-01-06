@@ -24,6 +24,7 @@ public:
     double minority_threshold = 40; //mV
     double minority_ROI_range = 500; //us
     double minority_ROI_offset  = 50; //us
+    int    is_alpha_calib       = 0; // 1: yes, 0: no
 		
     bool ReadConfigJSON(std::string filename);
     void PrintConfigJSON();
