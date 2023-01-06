@@ -434,6 +434,7 @@ int main(int argc,char *argv[]){
 				double* some_mino_height = s->GetPositionY();
 				double mino_peak_max =0;
 				for(int pks=0;pks<find_mino_peak;pks++){
+                    if( j == 0 || j == 1 || j == 2 ) continue; // need to fix
 					if(minority_threshold > some_mino_height[pks])continue;
 					//maximum method
 					if(some_mino_height[pks]>mino_peak_max){

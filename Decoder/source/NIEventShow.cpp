@@ -32,6 +32,7 @@
 //USER
 #include "Event.h"
 #include "NIConfig.hh"
+#include "NAPStyle.h"
 
 #define N_CHANNEL 64
 #define N_STRIP 32
@@ -43,6 +44,8 @@ using namespace std;
 
 //------------- main -------------------------------------------------
 int main(int argc,char *argv[]){
+
+    SetNAPStyle( );
 
 	Int_t MyPalette[64];
 	Double_t Red   [] = {1.0, 0.0, 1.0};
@@ -165,10 +168,10 @@ int main(int argc,char *argv[]){
         noise_c_hg[j]=sqrt(noise_c_hg[j]);
         noise_c_lg[j]=sqrt(noise_c_lg[j]);
 
-        mask_a_hg[j] = ( noise_a_hg[j] > 50.0 ) ? true : false;
-        mask_a_lg[j] = ( noise_a_lg[j] > 5.0   ) ? true : false;
+        mask_a_hg[j] = ( noise_a_hg[j] > 50.0 || j > 33 ) ? true : false;
+        mask_a_lg[j] = ( noise_a_lg[j] > 5.0  || j > 33 ) ? true : false;
         mask_c_hg[j] = ( noise_c_hg[j] > 50.0 ) ? true : false;
-        mask_c_lg[j] = ( noise_c_lg[j] > 5.0   ) ? true : false;
+        mask_c_lg[j] = ( noise_c_lg[j] > 5.0  ) ? true : false;
 
         // if( mask_a_hg[j] == true ) std::cout << "noise_a_hg[" << j << "]: " << noise_a_hg[j] << std::endl; 
         // if( mask_a_lg[j] == true ) std::cout << "noise_a_lg[" << j << "]: " << noise_a_lg[j] << std::endl; 
@@ -283,6 +286,10 @@ int main(int argc,char *argv[]){
 	TGraph* g_mino_search = new TGraph();
 	int mino_search_point = 0;
 
+	TGraph* g_main_search = new TGraph();
+	int main_search_point = 0;
+
+
 	for(int j=0;j<N_CHANNEL;j++){
 		//peak saerch
 		//anode
@@ -369,6 +376,7 @@ int main(int argc,char *argv[]){
 		int ROI_bins = ROI_max_bin - ROI_min_bin + 1;
         std::cout << ROI_min << "\t" << ROI_max << "\t" << lg_a_mainpeak_time << std::endl;
 
+
 		if(lg_a_mainpeak_time==-1){
 			//skip
 		}else{
@@ -383,7 +391,7 @@ int main(int argc,char *argv[]){
 			double mino_peak_max =0;
 			double mino_dt_min = ROI_min;
 			for(int pks=0;pks<find_mino_peak;pks++){
-
+                if( j == 0 || j == 1 || j == 2 ) continue; // need to fix
 				if(minority_threshold > some_mino_height[pks])continue;
 				//maxmum method
 				
@@ -491,6 +499,7 @@ int main(int argc,char *argv[]){
 	g_c_lg_main_peak->Draw("same p");
 
     c_strip->SaveAs( "recoil.png" );
+    c_strip->SaveAs( "recoil.pdf" );
     // c_strip->SaveAs( Form( "output6/strip_%d.png", ev_num ) );
 	
 	TCanvas *c_wave=new TCanvas("c_wave","",1000,1000);
@@ -498,29 +507,32 @@ int main(int argc,char *argv[]){
 	// c_wave->cd(1)->DrawFrame(0,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
 	// c_wave->cd(2)->DrawFrame(0,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
 
-	c_wave->cd(1)->DrawFrame(900,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
-	c_wave->cd(2)->DrawFrame(900,-4000,1600,4000,"HG waveform;us(4000sampling);mV");
+    TH1* pTmpHist = nullptr;
+	// pTmpHist = c_wave->cd(1)->DrawFrame(900,-4000,1600,4000,"HG waveform;Time [us];Voltage (+offset) [mV]");
+    // pTmpHist->GetYaxis()->SetTitleOffset( 1.7 );
 
+	// pTmpHist = c_wave->cd(2)->DrawFrame(900,-4000,1600,4000,"HG waveform;Time [us];Voltage (+offset) [mV]");
+    // pTmpHist->GetYaxis()->SetTitleOffset( 1.7 );
 
-	// c_wave->cd(1)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
-	// c_wave->cd(2)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
+	pTmpHist = c_wave->cd(1)->DrawFrame(900,-3700,1300,3000,"HG waveform;Time [#mus];Amplitude [mV]");
+    pTmpHist->GetYaxis()->SetTitleOffset( 1.7 );
 
-	// c_wave->cd(1)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
-	// c_wave->cd(2)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
+	pTmpHist = c_wave->cd(2)->DrawFrame(900,-3700,1300,3000,"HG waveform;Time [#mus];Amplitude [mV]");
+    pTmpHist->GetYaxis()->SetTitleOffset( 1.7 );
 
+	pTmpHist = c_wave->cd(3)->DrawFrame(900,-350,1300,100,"LG waveform;Time [#mus];Amplitude [mV]");
+    pTmpHist->GetYaxis()->SetTitleOffset( 1.5 );
 
-	// c_wave->cd(1)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
-	// c_wave->cd(2)->DrawFrame(900,-3500,1200,0,"HG waveform;us(4000sampling);mV");
+	pTmpHist = c_wave->cd(4)->DrawFrame(900,-350,1300,350,"LG waveform;Time [#mus];Amplitude [mV]");
+    pTmpHist->GetYaxis()->SetTitleOffset( 1.5 );
 
-	// c_wave->cd(2)->DrawFrame(900,0,1200,3500,"HG waveform;us(4000sampling);mV");
-	c_wave->cd(3)->DrawFrame(900,-400,1600,400,"LG waveform;us(4000sampling);mV");
-	c_wave->cd(4)->DrawFrame(900,-400,1600,400,"LG waveform;us(4000sampling);mV");
 	for(int i=0;i<N_CHANNEL;i++){
 		c_wave->cd(1); if( mask_a_hg[i] == false ) g_a_hg[i]->Draw("p same");
 		c_wave->cd(3); if( mask_a_lg[i] == false ) g_a_lg[i]->Draw("p same");
 		c_wave->cd(2); if( mask_c_hg[i] == false ) g_c_hg[i]->Draw("p same");
 		c_wave->cd(4); if( mask_c_lg[i] == false ) g_c_lg[i]->Draw("p same");
 	}
+
 	c_wave->cd(1);
 	g_mino_search->SetMarkerStyle(20);
 	g_mino_search->SetMarkerSize(0.5);
@@ -529,6 +541,7 @@ int main(int argc,char *argv[]){
 	g_mino_search->Draw("same p");
 
     c_wave->SaveAs( "wave.png" );
+    c_wave->SaveAs( "wave.pdf" );
 
 	TCanvas *c_charge = new TCanvas("c_charge","c_charge",1000,1000);
 	c_charge->Divide(2,2);
@@ -564,6 +577,7 @@ int main(int argc,char *argv[]){
 	h_c_lg_charge->Draw("hist");	
 
     c_charge->SaveAs( "charge.png" );
+    c_charge->SaveAs( "charge.pdf" );
 
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  Output
