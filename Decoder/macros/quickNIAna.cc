@@ -26,7 +26,7 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 {
     // file check
     TFile file( inputFile.c_str( ) );
-    TTree* pTree = dynamic_cast< TTree* >( file.Get( "anal_tree" ) );
+    TTree* pTree = dynamic_cast< TTree* >( file.Get( "ana_tree" ) );
     if( pTree == nullptr ) {
         NAUtil::Cerr( "failed to read ROOT file..." );
         return;

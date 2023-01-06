@@ -111,9 +111,9 @@ int main(int argc,char *argv[]){
 	std::string filename = NAUtil::GetFileName( dirfilename );
 	std::string basefilename = NAUtil::GetBaseFileName( dirfilename );
     
-	std::string outfilename = basefilename + "_anal.root";
+	std::string outfilename = basefilename + "_ana.root";
 	TFile *fout=new TFile(outfilename.c_str(),"recreate");
-	TTree* outtree = new TTree("anal_tree","anal_tree");
+	TTree* outtree = new TTree("ana_tree","ana_tree");
 
 	int outtree_event_ID;
 	int outtree_file_ID;
@@ -634,7 +634,7 @@ int main(int argc,char *argv[]){
 	//++++++++++++++++++++++++++++++++++++++++++
 	fout->Close();
 	std::cout << "" <<std::endl;
-	std::cout << "--- anal end ---" <<std::endl;
+	std::cout << "--- analysis end ---" <<std::endl;
 
 	// app.Run();
 
