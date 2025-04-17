@@ -1,11 +1,3 @@
-
-//------------------------------------------------------------------
-// Read tree for NIuTPc output data
-// Version 0.1
-// Update: 27. August 2020
-// Author: T.Shimada
-//------------------------------------------------------------------
-
 // STL
 #include <iostream>
 #include <fstream>
@@ -35,6 +27,7 @@
 //USER
 #include "Event.h"
 #include "NIConfig.hh"
+#include "NAUtil.h"
 
 #define N_CHANNEL 64
 #define N_STRIP 32
@@ -67,43 +60,40 @@ int main(int argc,char *argv[]){
 	//  read root file 
 	//++++++++++++++++++++++++++++++++++++++++++
 	std::string dirfilename=argv[1];
-	std::string::size_type index = dirfilename.find(".root");
-	if( index == std::string::npos ) { 
-		std::cout << "Failure!!!" << std::endl;
-		return 1;
-	}
+
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  read config file 
 	//++++++++++++++++++++++++++++++++++++++++++
 	string conffilename=argv[2];
 	NIConfig* ni_conf = new NIConfig();
 	ni_conf->ReadConfigJSON(conffilename);
-	int offset_sampling       = ni_conf->offset_sampling;
+	int    offset_sampling       = ni_conf->offset_sampling;
 	double driftV_main           = ni_conf->driftV_main;
 	double driftV_mino           = ni_conf->driftV_mino;
 	double calc_abs_z_param      = driftV_main*driftV_mino/(driftV_mino-driftV_main);
-	double tot_anode_threshold   = ni_conf->tot_anode_threshold;
+	double hg_anode_threshold    = ni_conf->hg_anode_threshold;
 	double lg_anode_threshold    = ni_conf->lg_anode_threshold;
-	double tot_cathode_threshold = ni_conf->tot_cathode_threshold;
+	double hg_cathode_threshold  = ni_conf->hg_cathode_threshold;
 	double lg_cathode_threshold  = ni_conf->lg_cathode_threshold;
 	double minority_threshold    = ni_conf->minority_threshold;
-	double minority_ROI_start    = ni_conf->minority_ROI_start;
-	double minority_ROI_end      = ni_conf->minority_ROI_end;
+	double minority_ROI_range    = ni_conf->minority_ROI_range;
+	double minority_ROI_offset   = ni_conf->minority_ROI_offset;
+	int    wf_integral_range_min = ni_conf->wf_integral_range_min;
+	int    wf_integral_range_max = ni_conf->wf_integral_range_max;
 
+
+    int    wf_integral_sampling = wf_integral_range_max - wf_integral_range_min;
 
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  analysis start
 	//++++++++++++++++++++++++++++++++++++++++++
 	std::cerr << "======================================" << std::endl;
 	std::cerr << "Read ROOT file" << std::endl;
-	std::cerr << "Visualizer for 0.1c NIuTPC" << std::endl;
-	std::cerr << "Version 0.1" << std::endl;
 	std::cerr << "======================================" << std::endl;
 	std::cerr << "input file name   : " << dirfilename << endl;
 	std::cerr << "input config file : " << conffilename << endl;
 	ni_conf->PrintConfigJSON();
 	std::cerr << "======================================" << std::endl;
-	// TApplication app("app",&argc,argv);  
 
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  Iutput Tree
@@ -119,22 +109,18 @@ int main(int argc,char *argv[]){
 	std::cerr << "NumberOfEvents : " << nevent << std::endl;
 	tree->SetBranchAddress("Event",&event);
 
-
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  Output Tree
 	//++++++++++++++++++++++++++++++++++++++++++
-	std::string filename;
-	std::string::size_type pos = dirfilename.find("/");
-	while(pos != std::string::npos){
-		dirfilename = dirfilename.substr(pos+1);
-		pos = dirfilename.find("/");
-	}
-	pos = dirfilename.find(".root");
-	filename = dirfilename.substr(0,pos);
-	std::string outfilename = filename.substr(0, index) + "_anal.root";
+	std::string filename = NAUtil::GetFileName( dirfilename );
+	std::string basefilename = NAUtil::GetBaseFileName( dirfilename );
+    
+	std::string outfilename = basefilename + "_ana.root";
 	TFile *fout=new TFile(outfilename.c_str(),"recreate");
-	TTree* outtree = new TTree("anal_tree","anal_tree");
-	int outtree_ev_num;
+	TTree* outtree = new TTree("ana_tree","ana_tree");
+
+	int outtree_event_ID;
+	int outtree_file_ID;
 	//anode
 	double outtree_a_hg_sum_pulse_height,outtree_a_lg_sum_pulse_height;
 	double outtree_a_hg_sum_charge,outtree_a_lg_sum_charge;
@@ -145,6 +131,7 @@ int main(int argc,char *argv[]){
 	vector<double> outtree_a_hg_mainrise_time;
 	vector<double> outtree_a_hg_mainfall_time;
 	vector<double> outtree_a_hg_tot;
+	vector<double> outtree_a_hg_pedestal,outtree_a_lg_pedestal,outtree_a_hg_noise,outtree_a_lg_noise;
 	//cathode
 	double outtree_c_hg_sum_pulse_height,outtree_c_lg_sum_pulse_height;
 	double outtree_c_hg_sum_charge,outtree_c_lg_sum_charge;
@@ -155,6 +142,7 @@ int main(int argc,char *argv[]){
 	vector<double> outtree_c_hg_mainrise_time;
 	vector<double> outtree_c_hg_mainfall_time;
 	vector<double> outtree_c_hg_tot;
+	vector<double> outtree_c_hg_pedestal,outtree_c_lg_pedestal,outtree_c_hg_noise,outtree_c_lg_noise;
 	//detector
 	vector<double> outtree_xz_x,outtree_xz_z,outtree_yz_y,outtree_yz_z;
 	double outtree_ave_x,outtree_ave_y,outtree_ave_z;
@@ -165,7 +153,12 @@ int main(int argc,char *argv[]){
 	vector<double> outtree_abs_x,outtree_abs_y,outtree_abs_z;
 	double outtree_ave_abs_x, outtree_ave_abs_y, outtree_ave_abs_z;
 
-	outtree->Branch("ev",                   &outtree_ev_num);
+	vector<double> outtree_a_hg_mino_peak_wf;
+	vector<double> outtree_a_lg_mino_peak_wf;
+
+
+	outtree->Branch("eventID",              &outtree_event_ID);
+	outtree->Branch("fileID",               &outtree_file_ID);
 	outtree->Branch("a_hg_sum_pulse_height",&outtree_a_hg_sum_pulse_height);
 	outtree->Branch("a_lg_sum_pulse_height",&outtree_a_lg_sum_pulse_height);
 	outtree->Branch("a_hg_sum_charge",      &outtree_a_hg_sum_charge);
@@ -180,6 +173,13 @@ int main(int argc,char *argv[]){
 	outtree->Branch("a_hg_mainrise_time",   &outtree_a_hg_mainrise_time);
 	outtree->Branch("a_hg_mainfall_time",   &outtree_a_hg_mainfall_time);
 	outtree->Branch("a_hg_tot",             &outtree_a_hg_tot);
+	outtree->Branch("a_hg_pedestal",        &outtree_a_hg_pedestal);
+	outtree->Branch("a_lg_pedestal",        &outtree_a_lg_pedestal);
+	outtree->Branch("a_hg_noise",           &outtree_a_hg_noise);
+	outtree->Branch("a_lg_noise",           &outtree_a_lg_noise);
+
+	outtree->Branch("a_hg_mino_peak_wf",    &outtree_a_hg_mino_peak_wf);
+	outtree->Branch("a_lg_mino_peak_wf",    &outtree_a_lg_mino_peak_wf);
 
 	outtree->Branch("c_hg_sum_pulse_height",&outtree_c_hg_sum_pulse_height);
 	outtree->Branch("c_lg_sum_pulse_height",&outtree_c_lg_sum_pulse_height);
@@ -195,6 +195,10 @@ int main(int argc,char *argv[]){
 	outtree->Branch("c_hg_mainrise_time",   &outtree_c_hg_mainrise_time);
 	outtree->Branch("c_hg_mainfall_time",   &outtree_c_hg_mainfall_time);
 	outtree->Branch("c_hg_tot",             &outtree_c_hg_tot);
+	outtree->Branch("c_hg_pedestal",        &outtree_c_hg_pedestal);
+	outtree->Branch("c_lg_pedestal",        &outtree_c_lg_pedestal);
+	outtree->Branch("c_hg_noise",           &outtree_c_hg_noise);
+	outtree->Branch("c_lg_noise",           &outtree_c_lg_noise);
 
 	outtree->Branch("xz_x",                 &outtree_xz_x);
 	outtree->Branch("xz_z",                 &outtree_xz_z);
@@ -214,6 +218,10 @@ int main(int argc,char *argv[]){
 	outtree->Branch("ave_abs_y",            &outtree_ave_abs_y);
 	outtree->Branch("ave_abs_z",            &outtree_ave_abs_z);
 
+    // extract fileID
+    size_t pos = basefilename.rfind( "_" );
+    std::string fileID = basefilename.substr( pos + 1, basefilename.size( ) - pos - 1 );
+    outtree_file_ID = std::stoi( fileID );
 	
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  visualize
@@ -231,11 +239,15 @@ int main(int argc,char *argv[]){
 	//for debug
 	TH1D* h_31ch_32ch_dt     = new TH1D("h_31ch_32ch_dt"    ,"h_31ch_32ch_dt"    ,SAMPLING_NUM,-SAMPLING_NUM,SAMPLING_NUM);
 
+
+    outtree_a_hg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
+    outtree_a_lg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
+
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  main loop
 	//++++++++++++++++++++++++++++++++++++++++++
 	for(int ev=0;ev<nevent;ev++){
-	//for(int ev=0;ev<1;ev++){ //to test
+        //for(int ev=0;ev<1;ev++){ //to test
 		// Get Event Info
 		tree->GetEntry(ev);
 		if(ev%1==0) std::cerr << "\rFill Data into Tree ... : "<< ev << "/" << nevent << std::flush;
@@ -257,6 +269,16 @@ int main(int argc,char *argv[]){
 		outtree_c_lg_mainpeak_time.clear();
 		outtree_c_hg_mainrise_time.clear();
 		outtree_c_hg_mainfall_time.clear();
+        outtree_a_hg_pedestal.clear();
+        outtree_a_lg_pedestal.clear();
+        outtree_c_hg_pedestal.clear();
+        outtree_c_lg_pedestal.clear();
+        outtree_a_hg_noise.clear();
+        outtree_a_lg_noise.clear();
+        outtree_c_hg_noise.clear();
+        outtree_c_lg_noise.clear();
+        // outtree_a_hg_mino_peak_wf.clear();
+        // outtree_a_lg_mino_peak_wf.clear();
 		outtree_xz_x.clear();
 		outtree_xz_z.clear();
 		outtree_yz_y.clear();
@@ -268,30 +290,44 @@ int main(int argc,char *argv[]){
 		outtree_abs_y.clear();
 		outtree_abs_z.clear();
 
+        // outtree_a_hg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
+        // outtree_a_lg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
+
 		int trigger_num = event->GetTrigger();
 
-        outtree_ev_num = ev;
+        outtree_event_ID = ev;
 		vector<vector<double>> a_hg_adc = event->GetAnodeHGADC();
 		vector<vector<double>> a_lg_adc = event->GetAnodeLGADC();
 		vector<vector<double>> c_hg_adc = event->GetCathodeHGADC();
 		vector<vector<double>> c_lg_adc = event->GetCathodeLGADC();
 
-		// Pedestal calc
-		double pedestal_a_hg[64];
-		double pedestal_a_lg[64];
-		double pedestal_c_hg[64];
-		double pedestal_c_lg[64];
+		// Pedestal and noise calculation (with a region of the offset sampling)
+        double pedestal_a_hg[64], pedestal_a_lg[64], noise_a_hg[64], noise_a_lg[64] = { };
+        double pedestal_c_hg[64], pedestal_c_lg[64], noise_c_hg[64], noise_c_lg[64] = { };
 		for(int j=0;j<N_CHANNEL;j++){
-			pedestal_a_hg[j]=0;
-			pedestal_a_lg[j]=0;
-			pedestal_c_hg[j]=0;
-			pedestal_c_lg[j]=0;
-			for(int k=0;k<offset_sampling;k++){
-				pedestal_a_hg[j] += a_hg_adc[j][k]/offset_sampling;
-				pedestal_a_lg[j] += a_lg_adc[j][k]/offset_sampling;
-				pedestal_c_hg[j] += c_hg_adc[j][k]/offset_sampling;
-				pedestal_c_lg[j] += c_lg_adc[j][k]/offset_sampling;
+            pedestal_a_hg[j] = 0.0; pedestal_a_lg[j] = 0.0; pedestal_c_hg[j] = 0.0; pedestal_c_lg[j] = 0.0;
+            noise_a_hg[j] = 0.0, noise_a_lg[j] = 0.0, noise_c_hg[j] = 0.0, noise_c_lg[j] = 0.0;
+
+			for(int k=0;k<offset_sampling;k++){ // calc. pedestal
+				pedestal_a_hg[j] += (a_hg_adc[j][k]/(double)offset_sampling);
+				pedestal_a_lg[j] += a_lg_adc[j][k]/(double)offset_sampling;
+				pedestal_c_hg[j] += c_hg_adc[j][k]/(double)offset_sampling;
+				pedestal_c_lg[j] += c_lg_adc[j][k]/(double)offset_sampling;
 			}
+			for(int k=0;k<offset_sampling;k++){ // calc. noise
+                noise_a_hg[j] += pow((a_hg_adc[j][k] - pedestal_a_hg[j]), 2)/(double)offset_sampling;
+                noise_a_lg[j] += pow((a_lg_adc[j][k] - pedestal_a_lg[j]), 2)/(double)offset_sampling;
+                noise_c_hg[j] += pow((c_hg_adc[j][k] - pedestal_c_hg[j]), 2)/(double)offset_sampling;
+                noise_c_lg[j] += pow((c_lg_adc[j][k] - pedestal_c_lg[j]), 2)/(double)offset_sampling;
+            }
+            outtree_a_hg_pedestal.push_back( pedestal_a_hg[j] );
+            outtree_a_lg_pedestal.push_back( pedestal_a_lg[j] );
+            outtree_c_hg_pedestal.push_back( pedestal_c_hg[j] );
+            outtree_c_lg_pedestal.push_back( pedestal_c_lg[j] );
+            outtree_a_hg_noise.push_back( sqrt( noise_a_hg[j] ) );
+            outtree_a_lg_noise.push_back( sqrt( noise_a_lg[j] ) );
+            outtree_c_hg_noise.push_back( sqrt( noise_c_hg[j] ) );
+            outtree_c_lg_noise.push_back( sqrt( noise_c_lg[j] ) );
 		}
 
 		//anode
@@ -318,6 +354,8 @@ int main(int argc,char *argv[]){
 			//anode
 			double hg_a_mainpeak_time=-1;
 			double lg_a_mainpeak_time=-1;
+			int    hg_a_mainpeak_idx =-1;
+			int    lg_a_mainpeak_idx =-1;
 			double hg_a_mainrise_time=-1;
 			double lg_a_mainrise_time=-1;
 			double hg_a_mainfall_time=-1;
@@ -346,7 +384,7 @@ int main(int argc,char *argv[]){
 			
 			for(int k=0;k<SAMPLING_NUM;k++){
 				//anode
-				if(a_hg_adc.at(j).at(k)-pedestal_a_hg[j] > tot_anode_threshold){
+				if(a_hg_adc.at(j).at(k)-pedestal_a_hg[j] > hg_anode_threshold){
 					if(hg_a_rise_flag==0){
 						hg_a_rise_flag=1;
 						hg_a_mainrise_time = k/SAMPLING_HELZ*1e6;
@@ -358,18 +396,20 @@ int main(int argc,char *argv[]){
 				}
 				if(hg_a_pulse_max < a_hg_adc.at(j).at(k)-pedestal_a_hg[j]){ //use HG
 					hg_a_pulse_max = a_hg_adc.at(j).at(k)-pedestal_a_hg[j];
-					if(hg_a_pulse_max>tot_anode_threshold){
+					if(hg_a_pulse_max>hg_anode_threshold){
 						hg_a_mainpeak_time=k/SAMPLING_HELZ*1e6;
+						hg_a_mainpeak_idx=k;
 					}
 				}
 				if(lg_a_pulse_max < a_lg_adc.at(j).at(k)-pedestal_a_lg[j]){ //use LG
 					lg_a_pulse_max = a_lg_adc.at(j).at(k)-pedestal_a_lg[j];
 					if(lg_a_pulse_max>lg_anode_threshold){
 						lg_a_mainpeak_time=k/SAMPLING_HELZ*1e6;
+						lg_a_mainpeak_idx=k;
 					}
 				}
 				//cathode
-				if(c_hg_adc.at(j).at(k)-pedestal_c_hg[j] < tot_cathode_threshold){
+				if(c_hg_adc.at(j).at(k)-pedestal_c_hg[j] < hg_cathode_threshold){
 					if(hg_c_rise_flag==0){
 						hg_c_rise_flag=1;
 						hg_c_mainrise_time = k/SAMPLING_HELZ*1e6;
@@ -381,7 +421,7 @@ int main(int argc,char *argv[]){
 				}
 				if(hg_c_pulse_max > c_hg_adc.at(j).at(k)-pedestal_c_hg[j]){ //use HG
 					hg_c_pulse_max = c_hg_adc.at(j).at(k)-pedestal_c_hg[j];
-					if(hg_c_pulse_max<tot_cathode_threshold){
+					if(hg_c_pulse_max<hg_cathode_threshold){
 						hg_c_mainpeak_time=k/SAMPLING_HELZ*1e6;
 					}
 				}
@@ -391,19 +431,24 @@ int main(int argc,char *argv[]){
 						lg_c_mainpeak_time=k/SAMPLING_HELZ*1e6;
 					}
 				}
+
 				h_mino_search->SetBinContent(k,a_hg_adc[j][k]-pedestal_a_hg[j]);//anode only
 			}
+
 			//++++++++++++++++++++++++++++++++++++++++++
 			//  Minority Peak analysis
+            //  note: LG is used only for time search. HG is used for peak search
 			//++++++++++++++++++++++++++++++++++++++++++
 			double this_mino_time=-1;
-			int ROI_min_bin = h_mino_search->FindBin(lg_a_mainpeak_time - minority_ROI_end);//us
-			int ROI_max_bin = h_mino_search->FindBin(lg_a_mainpeak_time - minority_ROI_start);//us
+            double ROI_min = lg_a_mainpeak_time - minority_ROI_offset - minority_ROI_range;
+            double ROI_max = lg_a_mainpeak_time - minority_ROI_offset;
+			int ROI_min_bin = h_mino_search->FindBin(ROI_min);//us
+			int ROI_max_bin = h_mino_search->FindBin(ROI_max);//us
 			int ROI_bins = ROI_max_bin - ROI_min_bin + 1;
-			if(lg_a_mainpeak_time==-1){
+			if(lg_a_mainpeak_time<-1){
 				//skip
 			}else{
-				TH1D* h_ROI = new TH1D("h_ROI","h_ROI",ROI_bins,lg_a_mainpeak_time-minority_ROI_end,lg_a_mainpeak_time-minority_ROI_start);
+				TH1D* h_ROI = new TH1D("h_ROI","h_ROI",ROI_bins,ROI_min,ROI_max);
 				for(int k=0;k<ROI_max_bin;k++){
 					h_ROI->SetBinContent(k,h_mino_search->GetBinContent(ROI_min_bin+k));
 				}
@@ -412,8 +457,8 @@ int main(int argc,char *argv[]){
 				double* some_mino_time   = s->GetPositionX();
 				double* some_mino_height = s->GetPositionY();
 				double mino_peak_max =0;
-				double mino_dt_min = minority_ROI_end;
 				for(int pks=0;pks<find_mino_peak;pks++){
+                    if( j == 0 || j == 1 || j == 2 ) continue; // need to fix
 					if(minority_threshold > some_mino_height[pks])continue;
 					//maximum method
 					if(some_mino_height[pks]>mino_peak_max){
@@ -423,11 +468,22 @@ int main(int argc,char *argv[]){
 					/*
 					// dt minimum method
 					if(lg_a_mainpeak_time-some_mino_time[pks]<mino_dt_min){
-						this_mino_time = some_mino_time[pks];
-						mino_dt_min = lg_a_mainpeak_time-some_mino_time[pks]; 
+                    this_mino_time = some_mino_time[pks];
+                    mino_dt_min = lg_a_mainpeak_time-some_mino_time[pks]; 
 					}
 					*/
 				}
+
+                if( mino_peak_max > 0.0 ) {
+                    // std::cout << "start" << std::endl;
+                    // cout << hg_a_mainpeak_idx << "\t" << lg_a_mainpeak_idx << endl;
+                    for( int relIdx = 0; relIdx < wf_integral_sampling; ++relIdx ) {
+                        if( lg_a_mainpeak_idx + wf_integral_range_min + relIdx < 0 || lg_a_mainpeak_idx + wf_integral_range_min + relIdx > 3999 ) continue;
+                        outtree_a_hg_mino_peak_wf.at( relIdx ) += a_hg_adc.at(j).at(lg_a_mainpeak_idx + wf_integral_range_min + relIdx )-pedestal_a_hg[j];
+                        outtree_a_lg_mino_peak_wf.at( relIdx ) += a_lg_adc.at(j).at(lg_a_mainpeak_idx + wf_integral_range_min + relIdx )-pedestal_a_lg[j];
+                    }
+                    // std::cout << "end" << std::endl;
+                }
 
 				s->Delete();
 				h_ROI->Delete();
@@ -439,7 +495,7 @@ int main(int argc,char *argv[]){
 			//  data push_back
 			//++++++++++++++++++++++++++++++++++++++++++
 			//main peak triggered
-			if(hg_a_mainpeak_time!=-1){
+			if(hg_a_mainpeak_time>-1){
 				double this_xz_x = (29-j+0.5)*0.04;//cm
 				double this_xz_z = lg_a_mainpeak_time*driftV_main*1e-3;//cm
 				//std::cout << "x : " << this_xz_x << " cm , z:" << this_xz_z << " cm" <<std::endl;
@@ -462,23 +518,21 @@ int main(int argc,char *argv[]){
 				outtree_a_hg_tot.push_back(hg_a_this_tot);
 				h_xz->Fill(this_xz_x,this_xz_z);
 				//minority triggered
-				if(this_mino_time!=-1){
+				if(this_mino_time>-1){
 					//if(hg_a_pulse_max<300)continue;
 					double this_abs_z = (lg_a_mainpeak_time-this_mino_time)*calc_abs_z_param*1e-3;
 					h_strip_dt->Fill(lg_a_mainpeak_time-this_mino_time);
 					h_strip_abs_z->Fill(this_abs_z);
-					//std::cout << "delta t : " << lg_a_mainpeak_time-this_mino_time << " us , calc param:" << calc_abs_z_param << "" <<std::endl;
-					//std::cout << "abs x : " << this_xz_x << " cm , z:" << this_abs_z << " cm" <<std::endl;
 					outtree_dt.push_back(lg_a_mainpeak_time-this_mino_time);
 					outtree_abs_x.push_back(this_xz_x);
 					outtree_abs_z.push_back(this_abs_z);
 					outtree_a_hg_minopeak_time.push_back(this_mino_time);
 				}
 			}
-			if(hg_c_mainpeak_time!=-1){
+			if(hg_c_mainpeak_time>-1){
 				double this_yz_y = (29-j+0.5)*0.04;//cm
 				double this_yz_z = lg_c_mainpeak_time*driftV_main*1e-3;//cm
-				//std::cout << "y : " << this_yz_y << " cm , z:" << this_yz_z << " cm" <<std::endl;
+
 				//cathode
 				outtree_c_hg_pulse_height.push_back(hg_c_pulse_max);
 				outtree_c_lg_pulse_height.push_back(lg_c_pulse_max);
@@ -535,11 +589,9 @@ int main(int argc,char *argv[]){
 			outtree_ave_x = std::accumulate(outtree_xz_x.begin(),outtree_xz_x.end(),0.0)/outtree_xz_x.size();
 			outtree_ave_y = std::accumulate(outtree_yz_y.begin(),outtree_yz_y.end(),0.0)/outtree_yz_y.size();
 			outtree_ave_z = (std::accumulate(outtree_xz_z.begin(),outtree_xz_z.end(),0.0)/outtree_xz_z.size()
-											+std::accumulate(outtree_yz_z.begin(),outtree_yz_z.end(),0.0)/outtree_yz_z.size()
-											)/2;
+                             +std::accumulate(outtree_yz_z.begin(),outtree_yz_z.end(),0.0)/outtree_yz_z.size()
+                             )/2;
 			h_xy->Fill(outtree_ave_x,outtree_ave_y);
-			//std::cout << "xz.size() : " << outtree_xz_x.size() << " | ave x : " << outtree_ave_x << "cm | ave z : " << outtree_ave_z << "cm" <<std::endl; 
-			//std::cout << "ave y : " << outtree_ave_y << "cm | ave z : " << outtree_ave_z << "cm" <<std::endl; 
 		}
 		if(outtree_abs_z.size()==0){
 			outtree_ave_abs_x = double(sqrt(-1));
@@ -547,7 +599,6 @@ int main(int argc,char *argv[]){
 		}else{
 			outtree_ave_abs_x = std::accumulate(outtree_abs_x.begin(),outtree_abs_x.end(),0.0)/outtree_abs_x.size();
 			outtree_ave_abs_z = std::accumulate(outtree_abs_z.begin(),outtree_abs_z.end(),0.0)/outtree_abs_z.size();
-			//std::cout << "abs x : " << outtree_ave_abs_x << "cm | abs z : " << outtree_ave_abs_z << "cm" <<std::endl; 
 			h_abs_z->Fill(outtree_ave_abs_z);
 			h_dt->Fill(outtree_ave_abs_z*1e3/calc_abs_z_param);
 		}
@@ -557,60 +608,60 @@ int main(int argc,char *argv[]){
 	
 		//for debug
 		h_31ch_32ch_dt->Fill(peak_time_32ch-peak_time_31ch);
-        std::cout << dirfilename << "\t" << ev << std::endl;
 	}
 
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  Draw
 	//++++++++++++++++++++++++++++++++++++++++++
-	gStyle->SetPalette(kRainBow);
-	TCanvas* c_vis = new TCanvas("c_vis","c_vis",0,0,1000,1000);
-	c_vis->Divide(3,3);
-	c_vis->cd(2);
-	h_sum_pulse_height->GetXaxis()->SetTitle("sum_pulse_height(mV)");
-	h_sum_pulse_height->GetYaxis()->SetTitle("counts");
-	h_sum_pulse_height->Draw();
-	c_vis->cd(5);
-	h_sum_charge->GetXaxis()->SetTitle("sum_charge");
-	h_sum_charge->GetYaxis()->SetTitle("counts");
-	h_sum_charge->Draw();
-	c_vis->cd(4);
-	h_xz->GetXaxis()->SetTitle("x(cm)");
-	h_xz->GetYaxis()->SetTitle("z(cm)");
-	h_xz->Draw("colz");
-	c_vis->cd(7);
-	h_xy->GetXaxis()->SetTitle("x(cm)");
-	h_xy->GetYaxis()->SetTitle("y(cm)");
-	h_xy->Draw("colz");
-	c_vis->cd(8);
-	h_yz->GetXaxis()->SetTitle("z(cm)");
-	h_yz->GetYaxis()->SetTitle("y(cm)");
-	h_yz->Draw("colz");
+    /*
+      gStyle->SetPalette(kRainBow);
+      TCanvas* c_vis = new TCanvas("c_vis","c_vis",0,0,1000,1000);
+      c_vis->Divide(3,3);
+      c_vis->cd(2);
+      h_sum_pulse_height->GetXaxis()->SetTitle("sum_pulse_height(mV)");
+      h_sum_pulse_height->GetYaxis()->SetTitle("counts");
+      h_sum_pulse_height->Draw();
+      c_vis->cd(5);
+      h_sum_charge->GetXaxis()->SetTitle("sum_charge");
+      h_sum_charge->GetYaxis()->SetTitle("counts");
+      h_sum_charge->Draw();
+      c_vis->cd(4);
+      h_xz->GetXaxis()->SetTitle("x(cm)");
+      h_xz->GetYaxis()->SetTitle("z(cm)");
+      h_xz->Draw("colz");
+      c_vis->cd(7);
+      h_xy->GetXaxis()->SetTitle("x(cm)");
+      h_xy->GetYaxis()->SetTitle("y(cm)");
+      h_xy->Draw("colz");
+      c_vis->cd(8);
+      h_yz->GetXaxis()->SetTitle("z(cm)");
+      h_yz->GetYaxis()->SetTitle("y(cm)");
+      h_yz->Draw("colz");
 
-	TCanvas* c_mino = new TCanvas("c_mino","c_mino",0,0,1000,1000);
-	c_mino->Divide(3,3);
-	c_mino->cd(5);
-	h_strip_dt->GetXaxis()->SetTitle("main - minority(us)");
-	h_strip_dt->GetYaxis()->SetTitle("counts");
-	h_strip_dt->Draw();
-	c_mino->cd(8);
-	h_strip_abs_z->GetXaxis()->SetTitle("absolute z(cm)");
-	h_strip_abs_z->GetYaxis()->SetTitle("counts");
-	h_strip_abs_z->Draw();
-	c_mino->cd(6);
-	h_dt->GetXaxis()->SetTitle("main - minority(us)");
-	h_dt->GetYaxis()->SetTitle("counts");
-	h_dt->Draw();
-	c_mino->cd(9);
-	h_abs_z->GetXaxis()->SetTitle("absolute z(cm)");
-	h_abs_z->GetYaxis()->SetTitle("counts");
-	h_abs_z->Draw();
+      TCanvas* c_mino = new TCanvas("c_mino","c_mino",0,0,1000,1000);
+      c_mino->Divide(3,3);
+      c_mino->cd(5);
+      h_strip_dt->GetXaxis()->SetTitle("main - minority(us)");
+      h_strip_dt->GetYaxis()->SetTitle("counts");
+      h_strip_dt->Draw();
+      c_mino->cd(8);
+      h_strip_abs_z->GetXaxis()->SetTitle("absolute z(cm)");
+      h_strip_abs_z->GetYaxis()->SetTitle("counts");
+      h_strip_abs_z->Draw();
+      c_mino->cd(6);
+      h_dt->GetXaxis()->SetTitle("main - minority(us)");
+      h_dt->GetYaxis()->SetTitle("counts");
+      h_dt->Draw();
+      c_mino->cd(9);
+      h_abs_z->GetXaxis()->SetTitle("absolute z(cm)");
+      h_abs_z->GetYaxis()->SetTitle("counts");
+      h_abs_z->Draw();
 
-	TCanvas* c_debug = new TCanvas("c_debug","c_debug",0,0,1000,1000);
-	h_31ch_32ch_dt->GetXaxis()->SetTitle("#Delta clock(2.5Mhz)");
-	h_31ch_32ch_dt->GetYaxis()->SetTitle("counts");
-	h_31ch_32ch_dt->Draw();
-
+      TCanvas* c_debug = new TCanvas("c_debug","c_debug",0,0,1000,1000);
+      h_31ch_32ch_dt->GetXaxis()->SetTitle("#Delta clock(2.5Mhz)");
+      h_31ch_32ch_dt->GetYaxis()->SetTitle("counts");
+      h_31ch_32ch_dt->Draw();
+    */
 	outtree->Write();
 	// app.Run();
 	//++++++++++++++++++++++++++++++++++++++++++
@@ -618,7 +669,7 @@ int main(int argc,char *argv[]){
 	//++++++++++++++++++++++++++++++++++++++++++
 	fout->Close();
 	std::cout << "" <<std::endl;
-	std::cout << "--- anal end ---" <<std::endl;
+	std::cout << "--- analysis end ---" <<std::endl;
 
 	// app.Run();
 

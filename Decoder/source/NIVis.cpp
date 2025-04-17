@@ -82,13 +82,13 @@ int main(int argc,char *argv[]){
 	double driftV_main           = ni_conf->driftV_main;
 	double driftV_mino           = ni_conf->driftV_mino;
 	double calc_abs_z_param      = driftV_main*driftV_mino/(driftV_mino-driftV_main);
-	double tot_anode_threshold   = ni_conf->tot_anode_threshold;
+	double hg_anode_threshold    = ni_conf->hg_anode_threshold;
 	double lg_anode_threshold    = ni_conf->lg_anode_threshold;
-	double tot_cathode_threshold = ni_conf->tot_cathode_threshold;
+	double hg_cathode_threshold  = ni_conf->hg_cathode_threshold;
 	double lg_cathode_threshold  = ni_conf->lg_cathode_threshold;
 	double minority_threshold    = ni_conf->minority_threshold;
-	double minority_ROI_start    = ni_conf->minority_ROI_start;
-	double minority_ROI_end      = ni_conf->minority_ROI_end;
+	// double minority_ROI_start    = ni_conf->minority_ROI_start;
+	// double minority_ROI_end      = ni_conf->minority_ROI_end;
 
 
 	//++++++++++++++++++++++++++++++++++++++++++

@@ -20,25 +20,31 @@ void NIConfig::PrintConfigJSON()
 	
 	printf("---------- configuration parameters ----------\n");
 	printf("Waveform Offset Calc Sampling    : %d clock\n",offset_sampling);
-	printf("Calibration Factor               : %d keV/ADC\n",cal_factor);
+	printf("Calibration Factor               : %lf keV/ADC\n",cal_factor);
 	printf("Drift Velocity (Main Charge)     : %.2lf cm/us\n",driftV_main);
 	printf("Drift Velocity (Minority Charge) : %.2lf cm/us\n",driftV_mino);
-	printf("ANODE TOT(HG) Threshold          : %.1lf mV\n",tot_anode_threshold);
+	printf("ANODE HG Threshold               : %.1lf mV\n",hg_anode_threshold);
 	printf("ANODE LG Threshold               : %.1lf mV\n",lg_anode_threshold);
-	printf("CATHODE TOT(HG) Threshold        : %.1lf mV\n",tot_cathode_threshold);
+	printf("CATHODE HG Threshold             : %.1lf mV\n",hg_cathode_threshold);
 	printf("CATHODE LG Threshold             : %.1lf mV\n",lg_cathode_threshold);
 	printf("Minority Threshold               : %.1lf mV\n",minority_threshold);
-	printf("Minority Saerch ROI              : %.1lf ~ %.1lf us\n",minority_ROI_start,minority_ROI_end);
+	printf("Minority ROI range               : %.1lf us\n",minority_ROI_range);
+	printf("Minority ROI offset              : %.1lf us\n",minority_ROI_offset);
+	printf("Is Alpha Calibration?            : %d (1: yes, 0: no)\n",is_alpha_calib);
+	printf("Waveform integral range (min)    : %d sampling\n",wf_integral_range_min);
+	printf("Waveform integral range (max)    : %d sampling\n",wf_integral_range_max);
 	printf("----------------------------------------------\n");
 
 }
 
-void NIConfig::ReadConfigJSON(std::string conffilename)
+bool NIConfig::ReadConfigJSON(std::string conffilename)
 {
 	std::string::size_type index_conf = conffilename.find(".json");
 	if( index_conf == std::string::npos ) { 
 		std::cout << "Failure!!!" << std::endl;
+        return false;
 	}
+
 	boost::property_tree::ptree pt;
 	read_json(conffilename,pt);
 
@@ -47,8 +53,8 @@ void NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<int> buf = pt.get_optional<int>("config.cal_factor")){
-		this->offset_sampling = pt.get<int>("config.cal_factor");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.cal_factor")){
+		this->cal_factor = pt.get<double>("config.cal_factor");
 	}else{
 	}
 
@@ -62,8 +68,8 @@ void NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.tot_anode_threshold")){
-		this->tot_anode_threshold = pt.get<double>("config.tot_anode_threshold");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.hg_anode_threshold")){
+		this->hg_anode_threshold = pt.get<double>("config.hg_anode_threshold");
 	}else{
 	}
 
@@ -72,8 +78,8 @@ void NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.tot_cathode_threshold")){
-		this->tot_cathode_threshold = pt.get<double>("config.tot_cathode_threshold");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.hg_cathode_threshold")){
+		this->hg_cathode_threshold = pt.get<double>("config.hg_cathode_threshold");
 	}else{
 	}
 
@@ -87,17 +93,30 @@ void NIConfig::ReadConfigJSON(std::string conffilename)
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_start")){
-		this->minority_ROI_start = pt.get<double>("config.minority_ROI_start");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_range")){
+		this->minority_ROI_range = pt.get<double>("config.minority_ROI_range");
 	}else{
 	}
 
-	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_end")){
-		this->minority_ROI_end = pt.get<double>("config.minority_ROI_end");
+	if(boost::optional<double> buf = pt.get_optional<double>("config.minority_ROI_offset")){
+		this->minority_ROI_offset = pt.get<double>("config.minority_ROI_offset");
 	}else{
 	}
 
+	if(boost::optional<int> buf = pt.get_optional<int>("config.is_alpha_calib")){
+		this->is_alpha_calib = pt.get<int>("config.is_alpha_calib");
+	}else{
+	}
 
+	if(boost::optional<int> buf = pt.get_optional<int>("config.wf_integral_range_min")){
+		this->wf_integral_range_min = pt.get<int>("config.wf_integral_range_min");
+	}else{
+	}
+
+	if(boost::optional<int> buf = pt.get_optional<int>("config.wf_integral_range_max")){
+		this->wf_integral_range_max = pt.get<int>("config.wf_integral_range_max");
+	}else{
+	}
+
+    return true;
 }
-
-
