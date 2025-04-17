@@ -117,7 +117,16 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
     TH2D* pHistEnergyDt = new TH2D( "histEnergyDt", "histEnergyDt", 100, 0.0, 400.0, 100, 0.0, 500.0 );
 
-    TH3D* pHistHitMapXYZ = new TH3D( "histHitmapXYZ", "histHitmapXYZ", 100, -1.5, 1.5, 100, -1.5,  1.5, 100, 0, 15.0 ); 
+    TH3D* pHistHitmapXYZ = new TH3D( "histHitmapXYZ", "histHitmapXYZ", 150, -0.75, 2.25, 150, -1.5,  1.5, 150, 0.0, 14.4 ); 
+    TH2D* pHistHitmapAllSelXY = new TH2D( "histHitmapAllSelXY", "histHitmapAllSelXY", 1000, -0.75, 2.25, 1000, -1.5,  2.0 );
+    TH2D* pHistHitmapAllSelXZ = new TH2D( "histHitmapAllSelXZ", "histHitmapAllSelXZ", 1000, -0.75, 2.25, 1000, 0.0,  16.0 );
+    TH2D* pHistHitmapAllSelYZ = new TH2D( "histHitmapAllSelYZ", "histHitmapAllSelYZ", 1000, -1.5, 1.5, 1000, 0.0,  16.0 );
+    TH1D* pHistHitmapAllSelZ  = new TH1D( "histHitmapZ", "histHitmapZ", 16, 0.0, 16.0 );
+
+    TH2D* pHistRiseMeanSigma = new TH2D( "histRiseMeanSigma","histRiseMeanSigma",100,1000,1200,100,0,20 );
+    TH2D* pHistRiseSigmaY    = new TH2D( "histRiseSigmaY","histRiseSigmaY",100,-1.5,1.5,100,0,20 );
+
+    TH1D* pHistAllDt = new TH1D( "histAllDt","histAllDt",100, 0.0, 200.0 );
 
     ifstream dataF("SRIM_F_in_20torr_SF6.dat");
     double SRIMenergy_F[1000], SRIMlength_F[1000];
@@ -230,21 +239,50 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
         double sumToT = 0.0;
         int nHit = pVec_a_hg_mainrise_time->size( );
+        double mainrise_sum = 0.0, mainrise_sqsum = 0.0;
         if( pVec_a_hg_mainfall_time->size( ) == nHit ) {
             for( int i = 0; i < nHit; ++i ) {
                 sumToT += ( pVec_a_hg_mainfall_time->at( i ) - pVec_a_hg_mainrise_time->at( i ) );
+                mainrise_sum += pVec_a_hg_mainrise_time->at( i );
+                mainrise_sqsum += pow(pVec_a_hg_mainrise_time->at( i ), 2.0);
             }
         }
-
+        
+        double mainrise_mean = mainrise_sum / (double)nHit;
+        double mainrise_sigma = sqrt(mainrise_sqsum / (double)nHit - pow(mainrise_mean, 2));
         if( isAlphaCalib == true ) {
             pHistEnergyToTCut->Fill( a_hg_sum_charge * calFactor, sumToT );
             pHistEnergyToTEnCut->Fill( a_hg_sum_charge * calFactor, sumToT/(a_hg_sum_charge * calFactor) );
             pHistEnergyLengthXZCut->Fill( a_hg_sum_charge * calFactor, lengthXZ );
             pHistEnergyLengthYZCut->Fill( a_hg_sum_charge * calFactor, lengthYZ );
             if( lengthXZ < 1.3 ) {
+                // at least 2 hits are required in cathode strips
+                if( pVec_yz_y->size( ) <= 1 ) continue;
+                // if( mainrise_sigma > 8.0 ) continue;
+                if( mainrise_sigma > 4.0 ) continue;
+
                 pHistEnergyCut->Fill( a_hg_sum_charge * calFactor );
                 pHistEnergyPulse->Fill( a_hg_sum_pulse_height * 127.8 / 16445.0 );
+
+                double averageDt = 0.0;
+                if( pVec_dt->size( ) > 0 ) averageDt = std::accumulate( pVec_dt->begin(),pVec_dt->end(),0.0)/pVec_dt->size();
+                pHistEnergyDt->Fill( a_hg_sum_charge * calFactor, averageDt );
+
+                for( auto eachDt : *pVec_dt ) pHistAllDt->Fill( eachDt );
+
+                double absZ = averageDt / ( (1.0 / driftV_sf6) - (1.0 / driftV_sf5) );
+                pHistHitmapXYZ->Fill( ave_x, ave_y, absZ );
+                pHistHitmapAllSelXY->Fill( ave_x, ave_y );
+                pHistHitmapAllSelXZ->Fill( ave_x, absZ );
+                pHistHitmapAllSelYZ->Fill( ave_y, absZ );
+                pHistHitmapAllSelZ->Fill( absZ );
+
+                std::cout << "file ID: " << fileID << "\tevtID: " << ev << "\tenergy: " << a_hg_sum_charge * calFactor << "\tdt: " << absZ << "\tX: " << ave_x << "\tY: " <<  ave_y << std::endl;
+
+                pHistRiseMeanSigma->Fill( mainrise_mean, mainrise_sigma );
+                pHistRiseSigmaY->Fill( ave_y, mainrise_sigma );
             }
+
         }
         else {
             if( lengthXZ < 0.004 * a_hg_sum_charge * calFactor + 0.4 ) {
@@ -275,8 +313,8 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
                         else if( a_hg_sum_charge * calFactor < 200.0 ) ++selEvt200Mino;
                         else if( a_hg_sum_charge * calFactor < 400.0 ) ++selEvt400Mino;
 
-                        if( averageDt < 120 )
-                            std::cout << "file ID: " << fileID << "\tevtID: " << ev << "\tenergy: " << a_hg_sum_charge * calFactor << "\tdt: " << averageDt << std::endl;
+                        // if( averageDt < 120 )
+                        //     std::cout << "file ID: " << fileID << "\tevtID: " << ev << "\tenergy: " << a_hg_sum_charge * calFactor << "\tdt: " << averageDt << std::endl;
 
                     }
                     else {
@@ -288,7 +326,17 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
                     double absZ = averageDt / ( (1.0 / driftV_sf6) - (1.0 / driftV_sf5) );
                     // std::cout << absZ << std::endl;
-                    pHistHitMapXYZ->Fill( ave_x, ave_y, absZ );
+                    if( absZ > 0.1 && absZ < 16.0 ) {
+                        pHistHitmapXYZ->Fill( ave_x, ave_y, absZ );
+                        pHistHitmapAllSelXY->Fill( ave_x, ave_y );
+                        pHistHitmapAllSelXZ->Fill( ave_x, absZ );
+                        pHistHitmapAllSelYZ->Fill( ave_y, absZ );
+                        pHistHitmapAllSelZ->Fill( absZ );
+                        if( absZ > 14.0 )
+                        // if( a_hg_sum_charge * calFactor < 100.0 && a_hg_sum_charge * calFactor > 50.0 )
+                            std::cout << "file ID: " << fileID << "\tevtID: " << ev << "\tenergy: " << a_hg_sum_charge * calFactor << "\tdt: " << absZ << "\tX: " << ave_x << "\tY: " <<  ave_y << std::endl;
+
+                    }
                 }
             }
         }
@@ -305,13 +353,46 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
         pHistEnergyToT->Fill( a_hg_sum_charge * calFactor, sumToT );
         pHistEnergyToTEn->Fill( a_hg_sum_charge * calFactor, sumToT/(a_hg_sum_charge * calFactor) );
-        
     }
     
     TCanvas cvs( "cvs", "cvs", 800, 600 );
     // TCanvas cvs( "cvs", "cvs", 800, 800 );
 
     gPad->SetRightMargin( 0.1 );
+
+    double zMean = 0.0, zRes = 0.0;
+    if( isAlphaCalib == true ) {
+        TF1 zResGauss( "zResGauss", "gaus", 5, 12 );
+        pHistHitmapAllSelZ->Fit( &zResGauss, "LMI", "", 5, 12 );
+        zMean = zResGauss.GetParameter( 1 );
+        zRes  = zResGauss.GetParameter( 2 );
+    }
+
+    pHistHitmapAllSelZ->SetMarkerStyle(20);
+    pHistHitmapAllSelZ->GetXaxis()->SetTitle( "#it{z} [cm]" );
+    pHistHitmapAllSelZ->GetYaxis()->SetTitle( "Events" );
+    pHistHitmapAllSelZ->GetYaxis()->SetRangeUser(0.0, pHistHitmapAllSelZ->GetMaximum( ) * 1.7 );
+    pHistHitmapAllSelZ->Draw("ep");
+    CreateDrawText( 0.55, 0.85, "^{252}Cf run", 0.05 );
+    CreateDrawText( 0.55, 0.79, "Z projection hit map", 0.05 );
+
+    TLine fidLineZ( 14.4, 0.0, 14.4, 10.5 );
+    fidLineZ.SetLineWidth( 2 );
+    fidLineZ.SetLineColor( kBlue );
+    // fidLineZ.SetLineStyle( 3 );
+    fidLineZ.Draw( );
+    TArrow fidArrowZ(14.4, 9.0, 13.0, 9.0, 0.02, "|>");
+    fidArrowZ.SetLineWidth( 2 );
+    fidArrowZ.SetLineColor( kBlue );
+    fidArrowZ.SetFillColor( kBlue );
+    fidArrowZ.Draw( );
+    if( isAlphaCalib == true ) {
+        CreateDrawText( 0.6, 0.65, Form("Mean: %0.2lf [cm]", zMean ), 0.045 );
+        CreateDrawText( 0.6, 0.58, Form("Sigma: %0.2lf [cm]", zRes ), 0.045 );
+    }
+
+    cvs.SaveAs( Form( "%s/absZ.png", outputDir.c_str( ) ) );
+    cvs.SaveAs( Form( "%s/absZ.pdf", outputDir.c_str( ) ) );
 
     // pHistEnergy->GetXaxis()->SetTitle( "#SigmaADC count" );
     pHistEnergy->GetXaxis()->SetTitle( "Energy [keV]" );
@@ -330,9 +411,9 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     pHistEnergy->Draw( "e" );
     pHistEnergyCut->Draw( "esame" );
 
-    TF1 fitGauss( "fitGauss", "gaus", 90, 160 );
+    TF1 fitGauss( "fitGauss", "gaus", 70, 140 );
     fitGauss.SetLineColor( kRed );
-    pHistEnergyCut->Fit(&fitGauss,"LMI","",90, 160);
+    pHistEnergyCut->Fit(&fitGauss,"LMI","",70, 140);
     double peakVal = fitGauss.GetParameter( 1 );
     double resoVal = fitGauss.GetParameter( 2 );
     // CreateDrawText( 0.48, 0.85, Form( "Default cal. factor = %0.6lf", calFactor ), 0.035 );
@@ -359,26 +440,6 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     pHistEnergyPulse->Fit( &fitGaussPulse, "LMI", "", 90, 160 );
     cvs.SaveAs( Form( "%s/energyPulse.pdf", outputDir.c_str( ) ) );
     
-    pHistHitMapXYZ->SetFillColor( kRed );
-    pHistHitMapXYZ->GetXaxis()->SetTitle( "#it{x} [cm]" );
-    pHistHitMapXYZ->GetXaxis()->SetTitleOffset( 2.0 );
-    // pHistHitMapXYZ->GetXaxis()->SetLavelSize( 0.9 );
-    pHistHitMapXYZ->GetXaxis()->SetRangeUser( -0.1, 1.2 );
-    pHistHitMapXYZ->GetYaxis()->SetTitle( "#it{y} [cm]" );
-    pHistHitMapXYZ->GetYaxis()->SetTitleOffset( 2.5 );
-    pHistHitMapXYZ->GetYaxis()->SetLabelOffset( 0.012 );
-    pHistHitMapXYZ->GetZaxis()->SetTitle( "#it{z} [cm]" );
-    pHistHitMapXYZ->GetZaxis()->SetTitleOffset( 1.2 );
-    // pHistHitMapXYZ->GetZaxis()->SetLavelSize( 0.9 );
-    pHistHitMapXYZ->Draw( "iso" );
-
-    CreateDrawText( 0.05, 0.94, "^{252}Cf run", 0.05);
-    CreateDrawText( 0.05, 0.88, "3D hit map", 0.05);
-
-    cvs.SaveAs( Form( "%s/hitmapXYZ.png", outputDir.c_str( ) ) );
-    cvs.SaveAs( Form( "%s/hitmapXYZ.pdf", outputDir.c_str( ) ) );
-
-
     const Int_t NRGBs = 5;
     const Int_t NCont = 255;
 
@@ -557,6 +618,75 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     std::cout << "The number of events (30 < E keV)\t:\t"        << selEvtAll << "\t" << selEvtAllMino << "\t" << effAllMino << "\t" << sqrt( effAllMino * (1.0 - effAllMino) / (double)selEvtAll ) << std::endl;
 
 
+    gPad->SetRightMargin( 0.1 );
+
+    pHistHitmapAllSelXY->SetXTitle( "#it{x} [cm]" );
+    pHistHitmapAllSelXY->SetYTitle( "#it{y} [cm]" );
+    pHistHitmapAllSelXY->SetZTitle( "Events" );
+    pHistHitmapAllSelXY->SetMarkerStyle(24);
+    pHistHitmapAllSelXY->SetMarkerColor(kRed);
+    pHistHitmapAllSelXY->Draw( "" );
+    // pHistHitmapAllSelXY->Draw( "colz" );
+    CreateDrawText( 0.15, 0.88, "^{252}Cf run, X-Y projection hit map", 0.05);
+    // CreateDrawText( 0.45, 0.88, "X-Y projection hit map", 0.05);
+    // CreateDrawText( 0.15, 0.83, "X-Y projection hit map", 0.04);
+    TBox fidAreaXY(0.0, -1.28, 1.28, 1.28 );
+    fidAreaXY.SetFillStyle(0);
+    fidAreaXY.SetLineColor(kBlue);
+    fidAreaXY.SetLineWidth(2);
+    fidAreaXY.Draw();
+    cvs.SaveAs( Form( "%s/hitmapAllSelXY.png", outputDir.c_str( ) ) );
+    cvs.SaveAs( Form( "%s/hitmapAllSelXY.pdf", outputDir.c_str( ) ) );
+
+    pHistHitmapAllSelXZ->SetXTitle( "#it{x} [cm]" );
+    pHistHitmapAllSelXZ->SetYTitle( "#it{z} [cm]" );
+    pHistHitmapAllSelXZ->SetZTitle( "Events" );
+    pHistHitmapAllSelXZ->SetMarkerStyle(24);
+    pHistHitmapAllSelXZ->SetMarkerColor(kRed);
+    pHistHitmapAllSelXZ->Draw( "" );
+    // pHistHitmapAllSelXZ->Draw( "colz" );
+    CreateDrawText( 0.15, 0.88, "^{252}Cf run, X-Z projection hit map", 0.05);
+    // CreateDrawText( 0.45, 0.88, "X-Z projection hit map", 0.05);
+    // CreateDrawText( 0.15, 0.83, "X-Z projection hit map", 0.04);
+    TBox fidAreaXZ(0.0, 0.0, 1.28, 14.4 );
+    fidAreaXZ.SetFillStyle(0);
+    fidAreaXZ.SetLineColor(kBlue);
+    fidAreaXZ.SetLineWidth(2);
+    fidAreaXZ.Draw();
+    cvs.SaveAs( Form( "%s/hitmapAllSelXZ.png", outputDir.c_str( ) ) );
+    cvs.SaveAs( Form( "%s/hitmapAllSelXZ.pdf", outputDir.c_str( ) ) );
+
+    pHistHitmapAllSelYZ->SetXTitle( "#it{y} [cm]" );
+    pHistHitmapAllSelYZ->SetYTitle( "#it{z} [cm]" );
+    pHistHitmapAllSelYZ->SetZTitle( "Events" );
+    pHistHitmapAllSelYZ->SetMarkerStyle(24);
+    pHistHitmapAllSelYZ->SetMarkerColor(kRed);
+    pHistHitmapAllSelYZ->Draw( "" );
+    // pHistHitmapAllSelYZ->Draw( "colz" );
+    CreateDrawText( 0.15, 0.88, "^{252}Cf run, Y-Z projection hit map", 0.05);
+    // CreateDrawText( 0.45, 0.88, "Y-Z projection hit map", 0.05);
+    // CreateDrawText( 0.15, 0.83, "Y-Z projection hit map", 0.04);
+    TBox fidAreaYZ(-1.28, 0.0, 1.28, 14.4 );
+    fidAreaYZ.SetFillStyle(0);
+    fidAreaYZ.SetLineColor(kBlue);
+    fidAreaYZ.SetLineWidth(2);
+    fidAreaYZ.Draw();
+    cvs.SaveAs( Form( "%s/hitmapAllSelYZ.png", outputDir.c_str( ) ) );
+    cvs.SaveAs( Form( "%s/hitmapAllSelYZ.pdf", outputDir.c_str( ) ) );
+
+
+    pHistRiseMeanSigma->SetXTitle( "Mean risetime [#mus]" );
+    pHistRiseMeanSigma->SetYTitle( "Sigma risetime [#mus]" );
+    pHistRiseMeanSigma->Draw("colz");
+    cvs.SaveAs( Form( "%s/rise.png", outputDir.c_str( ) ) );
+    cvs.SaveAs( Form( "%s/rise.pdf", outputDir.c_str( ) ) );
+
+    pHistRiseSigmaY->SetXTitle( "Y [cm]" );
+    pHistRiseSigmaY->SetYTitle( "Sigma risetime [#mus]" );
+    pHistRiseSigmaY->Draw("colz");
+    cvs.SaveAs( Form( "%s/riseSigmaY.png", outputDir.c_str( ) ) );
+    cvs.SaveAs( Form( "%s/riseSigmaY.pdf", outputDir.c_str( ) ) );
+
     TCanvas cvs2( "cvs2", "cvs2", 800, 600 );
     const double eneBinning[6] = { 0.0, 30.0, 50.0, 100.0, 200.0, 400.0 };
     TH1F histNum( "histMinoEffNum", "histMinoEffNum", 5, eneBinning );
@@ -607,6 +737,41 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
     cvs2.SaveAs( Form( "%s/eneEff.png", outputDir.c_str( ) ) );
     cvs2.SaveAs( Form( "%s/eneEff.pdf", outputDir.c_str( ) ) );
+
+
+    pHistAllDt->GetXaxis()->SetTitle( "#Deltat [#mus]" );
+    pHistAllDt->GetYaxis()->SetTitle( "#Strips" );
+    pHistAllDt->Draw( "" );
+    cvs2.SaveAs( Form( "%s/allDt.png", outputDir.c_str( ) ) );
+    cvs2.SaveAs( Form( "%s/allDt.pdf", outputDir.c_str( ) ) );
+
+
+    TCanvas cvs3D("cvs3D", "cvs3D", 800, 800 );
+    cvs3D.SetGridx( 1 ); cvs3D.SetGridy( 1 );
+    pHistHitmapXYZ->SetFillColor( kRed );
+    pHistHitmapXYZ->GetXaxis()->SetRangeUser( -1.5, 1.5 );
+    pHistHitmapXYZ->GetXaxis()->SetTitle( "#it{x} [cm]" );
+    pHistHitmapXYZ->GetXaxis()->SetTitleOffset( 2.0 );
+    // pHistHitmapXYZ->GetXaxis()->SetLavelSize( 0.9 );
+    pHistHitmapXYZ->GetXaxis()->SetRangeUser( -0.1, 1.2 );
+    pHistHitmapXYZ->GetYaxis()->SetTitle( "#it{y} [cm]" );
+    pHistHitmapXYZ->GetYaxis()->SetTitleOffset( 2.5 );
+    pHistHitmapXYZ->GetYaxis()->SetLabelOffset( 0.012 );
+    pHistHitmapXYZ->GetZaxis()->SetTitle( "#it{z} [cm]" );
+    pHistHitmapXYZ->GetZaxis()->SetTitleOffset( 1.2 );
+    // pHistHitmapXYZ->GetZaxis()->SetLavelSize( 0.9 );
+    pHistHitmapXYZ->Draw( "box" );
+    pHistHitmapXYZ->GetXaxis()->SetRangeUser( -0.75, 2.25 );
+    pHistHitmapXYZ->SetMarkerStyle( 20 );
+    pHistHitmapXYZ->SetMarkerColorAlpha( kRed, 0.65 );
+    pHistHitmapXYZ->Draw( "" );
+
+    CreateDrawText( 0.05, 0.94, "^{252}Cf run", 0.05);
+    CreateDrawText( 0.05, 0.88, "3D hit map", 0.05);
+
+    cvs3D.SaveAs( Form( "%s/hitmapXYZ.png", outputDir.c_str( ) ) );
+    cvs3D.SaveAs( Form( "%s/hitmapXYZ.pdf", outputDir.c_str( ) ) );
+
 
     return;
 }

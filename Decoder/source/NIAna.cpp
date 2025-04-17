@@ -78,7 +78,11 @@ int main(int argc,char *argv[]){
 	double minority_threshold    = ni_conf->minority_threshold;
 	double minority_ROI_range    = ni_conf->minority_ROI_range;
 	double minority_ROI_offset   = ni_conf->minority_ROI_offset;
+	int    wf_integral_range_min = ni_conf->wf_integral_range_min;
+	int    wf_integral_range_max = ni_conf->wf_integral_range_max;
 
+
+    int    wf_integral_sampling = wf_integral_range_max - wf_integral_range_min;
 
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  analysis start
@@ -149,6 +153,10 @@ int main(int argc,char *argv[]){
 	vector<double> outtree_abs_x,outtree_abs_y,outtree_abs_z;
 	double outtree_ave_abs_x, outtree_ave_abs_y, outtree_ave_abs_z;
 
+	vector<double> outtree_a_hg_mino_peak_wf;
+	vector<double> outtree_a_lg_mino_peak_wf;
+
+
 	outtree->Branch("eventID",              &outtree_event_ID);
 	outtree->Branch("fileID",               &outtree_file_ID);
 	outtree->Branch("a_hg_sum_pulse_height",&outtree_a_hg_sum_pulse_height);
@@ -169,6 +177,9 @@ int main(int argc,char *argv[]){
 	outtree->Branch("a_lg_pedestal",        &outtree_a_lg_pedestal);
 	outtree->Branch("a_hg_noise",           &outtree_a_hg_noise);
 	outtree->Branch("a_lg_noise",           &outtree_a_lg_noise);
+
+	outtree->Branch("a_hg_mino_peak_wf",    &outtree_a_hg_mino_peak_wf);
+	outtree->Branch("a_lg_mino_peak_wf",    &outtree_a_lg_mino_peak_wf);
 
 	outtree->Branch("c_hg_sum_pulse_height",&outtree_c_hg_sum_pulse_height);
 	outtree->Branch("c_lg_sum_pulse_height",&outtree_c_lg_sum_pulse_height);
@@ -228,6 +239,10 @@ int main(int argc,char *argv[]){
 	//for debug
 	TH1D* h_31ch_32ch_dt     = new TH1D("h_31ch_32ch_dt"    ,"h_31ch_32ch_dt"    ,SAMPLING_NUM,-SAMPLING_NUM,SAMPLING_NUM);
 
+
+    outtree_a_hg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
+    outtree_a_lg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
+
 	//++++++++++++++++++++++++++++++++++++++++++
 	//  main loop
 	//++++++++++++++++++++++++++++++++++++++++++
@@ -262,6 +277,8 @@ int main(int argc,char *argv[]){
         outtree_a_lg_noise.clear();
         outtree_c_hg_noise.clear();
         outtree_c_lg_noise.clear();
+        // outtree_a_hg_mino_peak_wf.clear();
+        // outtree_a_lg_mino_peak_wf.clear();
 		outtree_xz_x.clear();
 		outtree_xz_z.clear();
 		outtree_yz_y.clear();
@@ -272,6 +289,9 @@ int main(int argc,char *argv[]){
 		outtree_abs_x.clear();
 		outtree_abs_y.clear();
 		outtree_abs_z.clear();
+
+        // outtree_a_hg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
+        // outtree_a_lg_mino_peak_wf.resize(wf_integral_sampling); // not "reserve()" but "resize()":  0 should be filled.
 
 		int trigger_num = event->GetTrigger();
 
@@ -334,6 +354,8 @@ int main(int argc,char *argv[]){
 			//anode
 			double hg_a_mainpeak_time=-1;
 			double lg_a_mainpeak_time=-1;
+			int    hg_a_mainpeak_idx =-1;
+			int    lg_a_mainpeak_idx =-1;
 			double hg_a_mainrise_time=-1;
 			double lg_a_mainrise_time=-1;
 			double hg_a_mainfall_time=-1;
@@ -376,12 +398,14 @@ int main(int argc,char *argv[]){
 					hg_a_pulse_max = a_hg_adc.at(j).at(k)-pedestal_a_hg[j];
 					if(hg_a_pulse_max>hg_anode_threshold){
 						hg_a_mainpeak_time=k/SAMPLING_HELZ*1e6;
+						hg_a_mainpeak_idx=k;
 					}
 				}
 				if(lg_a_pulse_max < a_lg_adc.at(j).at(k)-pedestal_a_lg[j]){ //use LG
 					lg_a_pulse_max = a_lg_adc.at(j).at(k)-pedestal_a_lg[j];
 					if(lg_a_pulse_max>lg_anode_threshold){
 						lg_a_mainpeak_time=k/SAMPLING_HELZ*1e6;
+						lg_a_mainpeak_idx=k;
 					}
 				}
 				//cathode
@@ -449,6 +473,17 @@ int main(int argc,char *argv[]){
 					}
 					*/
 				}
+
+                if( mino_peak_max > 0.0 ) {
+                    // std::cout << "start" << std::endl;
+                    // cout << hg_a_mainpeak_idx << "\t" << lg_a_mainpeak_idx << endl;
+                    for( int relIdx = 0; relIdx < wf_integral_sampling; ++relIdx ) {
+                        if( lg_a_mainpeak_idx + wf_integral_range_min + relIdx < 0 || lg_a_mainpeak_idx + wf_integral_range_min + relIdx > 3999 ) continue;
+                        outtree_a_hg_mino_peak_wf.at( relIdx ) += a_hg_adc.at(j).at(lg_a_mainpeak_idx + wf_integral_range_min + relIdx )-pedestal_a_hg[j];
+                        outtree_a_lg_mino_peak_wf.at( relIdx ) += a_lg_adc.at(j).at(lg_a_mainpeak_idx + wf_integral_range_min + relIdx )-pedestal_a_lg[j];
+                    }
+                    // std::cout << "end" << std::endl;
+                }
 
 				s->Delete();
 				h_ROI->Delete();

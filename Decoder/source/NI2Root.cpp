@@ -3,11 +3,7 @@
 //
 // Input data format is 
 //   HEADER(16byte) + ADCDATA(4000*2*64) + TIMESTAMP(4byte)
-//------------------------------------------------------------
-// Update : 29. July 2016
-// Author : T.Ikeda
 //============================================================
-
 
 #include <stdio.h>
 #include <arpa/inet.h>
@@ -188,6 +184,8 @@ int main(int argc,char *argv[]){
   
 		if(ev_num==0)first_trigger_num = trigger;
 
+        // std::cout << module_num << std::endl;
+
 		// buffer fill
 		event_info ev_tmp;
 		ev_tmp.module_num = module_num;
@@ -196,45 +194,82 @@ int main(int argc,char *argv[]){
 		ev_tmp.hg_adc = tmp_hg_adc;
 		ev_tmp.lg_adc = tmp_lg_adc;
 		if(module_num==0){
+            // std::cout << "test" << std::endl;
 			cathode_info_0[trigger-first_trigger_num+10] = ev_tmp;
+
+            // // add anode_info_1 for the 3 board DAQ
+            // vector< vector<double> > c1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // vector< vector<double> > c1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // event_info ev_c1;
+            // ev_c1.module_num = module_num;
+            // ev_c1.timestamp = timestamp;
+            // ev_c1.trigger = trigger;
+            // ev_c1.hg_adc = c1_hg_adc;
+            // ev_c1.lg_adc = c1_lg_adc;
+			// cathode_info_1[trigger-first_trigger_num+10] = ev_c1;
+
+            // // add anode_info_1 for the 3 board DAQ
+            // vector< vector<double> > a0_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // vector< vector<double> > a0_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // event_info ev_a0;
+            // ev_a0.module_num = module_num;
+            // ev_a0.timestamp = timestamp;
+            // ev_a0.trigger = trigger;
+            // ev_a0.hg_adc = a0_hg_adc;
+            // ev_a0.lg_adc = a0_lg_adc;
+            // anode_info_0[trigger-first_trigger_num+10]   = ev_a0;
+
+            // // add anode_info_1 for the 3 board DAQ
+            // vector< vector<double> > a1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // vector< vector<double> > a1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // event_info ev_a1;
+            // ev_a1.module_num = module_num;
+            // ev_a1.timestamp = timestamp;
+            // ev_a1.trigger = trigger;
+            // ev_a1.hg_adc = a1_hg_adc;
+            // ev_a1.lg_adc = a1_lg_adc;
+            // anode_info_1[trigger-first_trigger_num+10]   = ev_a1;
+
 		}
 		else if(module_num==1){
+
 			cathode_info_1[trigger-first_trigger_num+10] = ev_tmp;
 		}
 		else if(module_num==2){
 			anode_info_0[trigger-first_trigger_num+10]   = ev_tmp;
 
-            // add anode_info_1 for the 3 board DAQ
-            vector< vector<double> > a1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            vector< vector<double> > a1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            event_info ev_a1;
-            ev_a1.module_num = module_num;
-            ev_a1.timestamp = timestamp;
-            ev_a1.trigger = trigger;
-            ev_a1.hg_adc = a1_hg_adc;
-            ev_a1.lg_adc = a1_lg_adc;
-            anode_info_1[trigger-first_trigger_num+10]   = ev_a1;
+            // // add anode_info_1 for the 3 board DAQ
+            // vector< vector<double> > a1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // vector< vector<double> > a1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
+            // event_info ev_a1;
+            // ev_a1.module_num = module_num;
+            // ev_a1.timestamp = timestamp;
+            // ev_a1.trigger = trigger;
+            // ev_a1.hg_adc = a1_hg_adc;
+            // ev_a1.lg_adc = a1_lg_adc;
+            // anode_info_1[trigger-first_trigger_num+10]   = ev_a1;
 		}
 		else if(module_num==3){
             // should not be entered...
-			// anode_info_1[trigger-first_trigger_num+10]   = ev_tmp;
+			anode_info_1[trigger-first_trigger_num+10]   = ev_tmp;
 		}
 		current_size += double(HEADER_SIZE + length + 4);
 		ev_num++;
 	}
 	
-	// double nevent = double(ev_num/4);
-	double nevent = double(ev_num/3);
+	double nevent = double(ev_num/4);
+	// double nevent = double(ev_num);
+	// double nevent = double(ev_num/3);
+	std::cout<<ev_num<<std::endl;
 	ev_num=0;
-	std::cout<<std::endl;
 
 	for(int i=0;i<anode_info_0.size();i++){
 		if(anode_info_0[i].module_num==-1 || 
-           // anode_info_1[i].module_num==-1 || 
+           anode_info_1[i].module_num==-1 || 
            cathode_info_0[i].module_num==-1 || 
            cathode_info_1[i].module_num==-1 
            ){
-			//std::cout << "skip trigger ev" <<std::endl;
+			std::cout << "skip trigger ev" <<std::endl;
 			continue;
 		}
 		if(ev_num%1==0) std::cerr << "\rFill Data into Tree ... : "<< ev_num << "/" << nevent <<std::flush;

@@ -25,6 +25,9 @@ public:
     double minority_ROI_range = 500; //us
     double minority_ROI_offset  = 50; //us
     int    is_alpha_calib       = 0; // 1: yes, 0: no
+    int    wf_integral_range_min = -512; // sampling
+    int    wf_integral_range_max = 512; // sampling
+
 		
     bool ReadConfigJSON(std::string filename);
     void PrintConfigJSON();

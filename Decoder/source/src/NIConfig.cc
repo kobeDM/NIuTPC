@@ -31,6 +31,8 @@ void NIConfig::PrintConfigJSON()
 	printf("Minority ROI range               : %.1lf us\n",minority_ROI_range);
 	printf("Minority ROI offset              : %.1lf us\n",minority_ROI_offset);
 	printf("Is Alpha Calibration?            : %d (1: yes, 0: no)\n",is_alpha_calib);
+	printf("Waveform integral range (min)    : %d sampling\n",wf_integral_range_min);
+	printf("Waveform integral range (max)    : %d sampling\n",wf_integral_range_max);
 	printf("----------------------------------------------\n");
 
 }
@@ -103,6 +105,16 @@ bool NIConfig::ReadConfigJSON(std::string conffilename)
 
 	if(boost::optional<int> buf = pt.get_optional<int>("config.is_alpha_calib")){
 		this->is_alpha_calib = pt.get<int>("config.is_alpha_calib");
+	}else{
+	}
+
+	if(boost::optional<int> buf = pt.get_optional<int>("config.wf_integral_range_min")){
+		this->wf_integral_range_min = pt.get<int>("config.wf_integral_range_min");
+	}else{
+	}
+
+	if(boost::optional<int> buf = pt.get_optional<int>("config.wf_integral_range_max")){
+		this->wf_integral_range_max = pt.get<int>("config.wf_integral_range_max");
 	}else{
 	}
 
