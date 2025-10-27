@@ -11,6 +11,8 @@
 		"minority_threshold":20, //mV
 		"minority_ROI_range":200, //us
 		"minority_ROI_offset":20 //us
-		"is_alpha_calib":0 // 1: calibration, 0: others
+		"is_alpha_calib":0, // 1: calibration, 0: others
+        "wf_integral_range_min":-512,
+        "wf_integral_range_max":512
 	}
 }
