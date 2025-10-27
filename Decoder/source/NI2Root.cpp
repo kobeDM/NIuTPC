@@ -58,7 +58,7 @@ int main(int argc,char *argv[]){
 	std::cerr << "=========================================" << std::endl;
 	std::cerr << " Create ROOT file for NIuTPC output data " << std::endl;
 	std::cerr << " Versioin 0.1 " << std::endl;
-	std::cerr << " Using : ./main [filename] " << std::endl;
+	std::cerr << " Using : ./NI2Root [filename] " << std::endl;
 	std::cerr << "=========================================" << std::endl;
 
 	if(argc != 2) {
@@ -184,8 +184,6 @@ int main(int argc,char *argv[]){
   
 		if(ev_num==0)first_trigger_num = trigger;
 
-        // std::cout << module_num << std::endl;
-
 		// buffer fill
 		event_info ev_tmp;
 		ev_tmp.module_num = module_num;
@@ -194,63 +192,15 @@ int main(int argc,char *argv[]){
 		ev_tmp.hg_adc = tmp_hg_adc;
 		ev_tmp.lg_adc = tmp_lg_adc;
 		if(module_num==0){
-            // std::cout << "test" << std::endl;
 			cathode_info_0[trigger-first_trigger_num+10] = ev_tmp;
-
-            // // add anode_info_1 for the 3 board DAQ
-            // vector< vector<double> > c1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // vector< vector<double> > c1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // event_info ev_c1;
-            // ev_c1.module_num = module_num;
-            // ev_c1.timestamp = timestamp;
-            // ev_c1.trigger = trigger;
-            // ev_c1.hg_adc = c1_hg_adc;
-            // ev_c1.lg_adc = c1_lg_adc;
-			// cathode_info_1[trigger-first_trigger_num+10] = ev_c1;
-
-            // // add anode_info_1 for the 3 board DAQ
-            // vector< vector<double> > a0_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // vector< vector<double> > a0_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // event_info ev_a0;
-            // ev_a0.module_num = module_num;
-            // ev_a0.timestamp = timestamp;
-            // ev_a0.trigger = trigger;
-            // ev_a0.hg_adc = a0_hg_adc;
-            // ev_a0.lg_adc = a0_lg_adc;
-            // anode_info_0[trigger-first_trigger_num+10]   = ev_a0;
-
-            // // add anode_info_1 for the 3 board DAQ
-            // vector< vector<double> > a1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // vector< vector<double> > a1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // event_info ev_a1;
-            // ev_a1.module_num = module_num;
-            // ev_a1.timestamp = timestamp;
-            // ev_a1.trigger = trigger;
-            // ev_a1.hg_adc = a1_hg_adc;
-            // ev_a1.lg_adc = a1_lg_adc;
-            // anode_info_1[trigger-first_trigger_num+10]   = ev_a1;
-
 		}
 		else if(module_num==1){
-
 			cathode_info_1[trigger-first_trigger_num+10] = ev_tmp;
 		}
 		else if(module_num==2){
 			anode_info_0[trigger-first_trigger_num+10]   = ev_tmp;
-
-            // // add anode_info_1 for the 3 board DAQ
-            // vector< vector<double> > a1_hg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // vector< vector<double> > a1_lg_adc(N_BOARD_STRIP,vector<double>(N_SAMPLE,0));
-            // event_info ev_a1;
-            // ev_a1.module_num = module_num;
-            // ev_a1.timestamp = timestamp;
-            // ev_a1.trigger = trigger;
-            // ev_a1.hg_adc = a1_hg_adc;
-            // ev_a1.lg_adc = a1_lg_adc;
-            // anode_info_1[trigger-first_trigger_num+10]   = ev_a1;
 		}
 		else if(module_num==3){
-            // should not be entered...
 			anode_info_1[trigger-first_trigger_num+10]   = ev_tmp;
 		}
 		current_size += double(HEADER_SIZE + length + 4);
@@ -258,9 +208,6 @@ int main(int argc,char *argv[]){
 	}
 	
 	double nevent = double(ev_num/4);
-	// double nevent = double(ev_num);
-	// double nevent = double(ev_num/3);
-	std::cout<<ev_num<<std::endl;
 	ev_num=0;
 
 	for(int i=0;i<anode_info_0.size();i++){
@@ -269,7 +216,6 @@ int main(int argc,char *argv[]){
            cathode_info_0[i].module_num==-1 || 
            cathode_info_1[i].module_num==-1 
            ){
-			std::cout << "skip trigger ev" <<std::endl;
 			continue;
 		}
 		if(ev_num%1==0) std::cerr << "\rFill Data into Tree ... : "<< ev_num << "/" << nevent <<std::flush;
@@ -288,16 +234,6 @@ int main(int argc,char *argv[]){
 		vector<vector<double>> lg_c_adc_1 = cathode_info_1[i].lg_adc;
 		
 		//combine data
-		/*
-          hg_a_adc_0.reserve(hg_a_adc_0.size(),hg_a_adc_1.size());
-          lg_a_adc_0.reserve(lg_a_adc_0.size(),lg_a_adc_1.size());
-          hg_c_adc_0.reserve(hg_c_adc_0.size(),hg_c_adc_1.size());
-          lg_c_adc_0.reserve(lg_c_adc_0.size(),lg_c_adc_1.size());
-          std::copy(hg_a_adc_1.begin(), hg_a_adc_1.end(), std::back_inserter(hg_a_adc_0));
-          std::copy(lg_a_adc_1.begin(), lg_a_adc_1.end(), std::back_inserter(lg_a_adc_0));
-          std::copy(hg_c_adc_1.begin(), hg_c_adc_1.end(), std::back_inserter(hg_c_adc_0));
-          std::copy(lg_c_adc_1.begin(), lg_c_adc_1.end(), std::back_inserter(lg_c_adc_0));
-		*/
 		hg_a_adc_0.insert(hg_a_adc_0.end(),hg_a_adc_1.begin(),hg_a_adc_1.end());
 		lg_a_adc_0.insert(lg_a_adc_0.end(),lg_a_adc_1.begin(),lg_a_adc_1.end());
 		hg_c_adc_0.insert(hg_c_adc_0.end(),hg_c_adc_1.begin(),hg_c_adc_1.end());

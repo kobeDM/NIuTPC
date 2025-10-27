@@ -59,6 +59,8 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     double ave_x = 0.0, ave_y = 0.0, ave_z = 0.0;
     double a_hg_sum_pulse_height = 0.0, a_hg_sum_charge = 0.0;
     double c_hg_sum_pulse_height = 0.0, c_hg_sum_charge = 0.0;
+    double a_lg_sum_pulse_height = 0.0, a_lg_sum_charge = 0.0;
+    double c_lg_sum_pulse_height = 0.0, c_lg_sum_charge = 0.0;
     vector< double >* pVec_a_hg_mainrise_time = nullptr;
     vector< double >* pVec_a_hg_mainfall_time = nullptr;
     vector< double >* pVec_c_hg_mainrise_time = nullptr;
@@ -78,6 +80,10 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     pTree->SetBranchAddress( "a_hg_sum_charge",       &a_hg_sum_charge       );
     pTree->SetBranchAddress( "c_hg_sum_pulse_height", &c_hg_sum_pulse_height );
     pTree->SetBranchAddress( "c_hg_sum_charge",       &c_hg_sum_charge       );
+    pTree->SetBranchAddress( "a_lg_sum_pulse_height", &a_lg_sum_pulse_height );
+    pTree->SetBranchAddress( "a_lg_sum_charge",       &a_lg_sum_charge       );
+    pTree->SetBranchAddress( "c_lg_sum_pulse_height", &c_lg_sum_pulse_height );
+    pTree->SetBranchAddress( "c_lg_sum_charge",       &c_lg_sum_charge       );
     pTree->SetBranchAddress( "a_hg_mainrise_time", &pVec_a_hg_mainrise_time );
     pTree->SetBranchAddress( "a_hg_mainfall_time", &pVec_a_hg_mainfall_time );
     pTree->SetBranchAddress( "c_hg_mainrise_time", &pVec_c_hg_mainrise_time );
@@ -106,12 +112,12 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     TH2D* pHistEnergyToTEn    = new TH2D( "histEnergyToTEn", "histEnergyToTEn", 100, 0.0, 400.0, 100, 0.0, 10.0 );
     TH2D* pHistEnergyToTEnCut = new TH2D( "histEnergyToTEnCut", "histEnergyToTEnCut", 100, 0.0, 400.0, 100, 0.0, 10.0 );
 
-    TH2D* pHistEnergyLengthXZ = new TH2D( "histEnergyLengthXZ", "histEnergyLengthXZ", 40, 0.0, 400.0, 40, 0.0, 2.0 );
-    TH2D* pHistEnergyLengthYZ = new TH2D( "histEnergyLengthYZ", "histEnergyLengthYZ", 40, 0.0, 400.0, 40, 0.0, 2.0 );
-    TH2D* pHistEnergyLengthXY = new TH2D( "histEnergyLengthXY", "histEnergyLengthXY", 40, 0.0, 400.0, 40, 0.0, 2.0 );
+    TH2D* pHistEnergyLengthXZ = new TH2D( "histEnergyLengthXZ", "histEnergyLengthXZ", 40, 0.0, 400.0, 100, 0.0, 4.0 );
+    TH2D* pHistEnergyLengthYZ = new TH2D( "histEnergyLengthYZ", "histEnergyLengthYZ", 40, 0.0, 400.0, 100, 0.0, 4.0 );
+    TH2D* pHistEnergyLengthXY = new TH2D( "histEnergyLengthXY", "histEnergyLengthXY", 40, 0.0, 400.0, 100, 0.0, 4.0 );
 
-    TH2D* pHistEnergyLengthXZCut = new TH2D( "histEnergyLengthXZCut", "histEnergyLengthXZCut", 40, 0.0, 400.0, 40, 0.0, 2.0 );
-    TH2D* pHistEnergyLengthYZCut = new TH2D( "histEnergyLengthYZCut", "histEnergyLengthYZCut", 40, 0.0, 400.0, 40, 0.0, 2.0 );
+    TH2D* pHistEnergyLengthXZCut = new TH2D( "histEnergyLengthXZCut", "histEnergyLengthXZCut", 40, 0.0, 400.0, 100, 0.0, 4.0 );
+    TH2D* pHistEnergyLengthYZCut = new TH2D( "histEnergyLengthYZCut", "histEnergyLengthYZCut", 40, 0.0, 400.0, 100, 0.0, 4.0 );
 
     TH2D* pHistHitmapXYCut = new TH2D( "histHitmapXYCut", "histHitmapXYCut", 100, -1.5, 1.5, 100, -1.5,  1.5 );
 
@@ -163,6 +169,38 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
     g_SRIM_H->SetTitle("g_SRIM_H");
     g_SRIM_H->SetLineColor(4);
     g_SRIM_H->SetLineWidth(2);
+
+    // Create output rootfile
+    TFile outFile( Form( "%s/quickAna.root", outputDir.c_str( ) ), "recreate" );
+    TTree* pOutTree = new TTree( "qi_tree", "qi_tree" );
+    pOutTree->SetDirectory( &outFile );
+
+    double lengthXZ = 0.0, lengthYZ = 0.0;
+    pOutTree->Branch( "eventID", &ev );
+    pOutTree->Branch( "fileID", &fileID );
+    pOutTree->Branch( "xz_x", &pVec_xz_x );
+    pOutTree->Branch( "xz_z", &pVec_xz_z );
+    pOutTree->Branch( "yz_y", &pVec_yz_y );
+    pOutTree->Branch( "yz_z", &pVec_yz_z );
+    pOutTree->Branch( "ave_x", &ave_x );
+    pOutTree->Branch( "ave_y", &ave_y );
+    pOutTree->Branch( "ave_z", &ave_z );
+    pOutTree->Branch( "a_hg_sum_pulse_height", &a_hg_sum_pulse_height );
+    pOutTree->Branch( "a_hg_sum_charge",       &a_hg_sum_charge       );
+    pOutTree->Branch( "c_hg_sum_pulse_height", &c_hg_sum_pulse_height );
+    pOutTree->Branch( "c_hg_sum_charge",       &c_hg_sum_charge       );
+    pOutTree->Branch( "a_lg_sum_pulse_height", &a_lg_sum_pulse_height );
+    pOutTree->Branch( "a_lg_sum_charge",       &a_lg_sum_charge       );
+    pOutTree->Branch( "c_lg_sum_pulse_height", &c_lg_sum_pulse_height );
+    pOutTree->Branch( "c_lg_sum_charge",       &c_lg_sum_charge       );
+    pOutTree->Branch( "a_hg_mainrise_time", &pVec_a_hg_mainrise_time );
+    pOutTree->Branch( "a_hg_mainfall_time", &pVec_a_hg_mainfall_time );
+    pOutTree->Branch( "c_hg_mainrise_time", &pVec_c_hg_mainrise_time );
+    pOutTree->Branch( "c_hg_mainfall_time", &pVec_c_hg_mainfall_time );
+    pOutTree->Branch( "dt",                 &pVec_dt );
+
+    pOutTree->Branch( "lengthXZ", &lengthXZ );
+    pOutTree->Branch( "lengthYZ", &lengthYZ );
 
     int totEvt = pTree->GetEntries( );
     int selEvtAll = 0, selEvt50 = 0, selEvt100 = 0, selEvt200 = 0, selEvt400 = 0;
@@ -216,8 +254,8 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
             }
         }
 
-        double lengthXZ = sqrt( pow( xz_x_max - xz_x_min, 2) + pow( yz_y_max - yz_y_min, 2) + pow( xz_z_max - xz_z_min, 2) );
-        double lengthYZ = sqrt( pow( xz_x_max - xz_x_min, 2) + pow( yz_y_max - yz_y_min, 2) + pow( yz_z_max - yz_z_min, 2) );
+        lengthXZ = sqrt( pow( xz_x_max - xz_x_min, 2) + pow( yz_y_max - yz_y_min, 2) + pow( xz_z_max - xz_z_min, 2) );
+        lengthYZ = sqrt( pow( xz_x_max - xz_x_min, 2) + pow( yz_y_max - yz_y_min, 2) + pow( yz_z_max - yz_z_min, 2) );
         double lengthXY = sqrt( pow( xz_x_max - xz_x_min, 2) + pow( yz_y_max - yz_y_min, 2) );
         double lengthX  = sqrt( pow( xz_x_max - xz_x_min, 2) );
         double lengthY  = sqrt( pow( yz_y_max - yz_y_min, 2) );
@@ -227,15 +265,15 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
         // fiducial cut
         if( isAlphaCalib == true ) {
-            if( xz_x_max < 1.1 || xz_x_min > 0.0 ) continue;
+            // if( xz_x_max < 1.1 || xz_x_min > -1.1 ) continue;
         }
         else {
-            if( xz_x_max > 1.1 || xz_x_min < 0.1 ) continue;
+            if( xz_x_max > 1.1 || xz_x_min < -1.1 ) continue;
             if( yz_y_max > 1.1 || yz_y_min < -1.1 ) continue;
         }
 
         // energy cut
-        if( a_hg_sum_charge * calFactor < 10.0 ) continue;
+        // if( a_hg_sum_charge * calFactor < 10.0 ) continue;
 
         double sumToT = 0.0;
         int nHit = pVec_a_hg_mainrise_time->size( );
@@ -339,6 +377,7 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
                     }
                 }
             }
+            
         }
 
         pHistHitmapXYCut->Fill( ave_x, ave_y );
@@ -353,7 +392,11 @@ void quickNIAna( const std::string& inputFile, const std::string& configFile, co
 
         pHistEnergyToT->Fill( a_hg_sum_charge * calFactor, sumToT );
         pHistEnergyToTEn->Fill( a_hg_sum_charge * calFactor, sumToT/(a_hg_sum_charge * calFactor) );
+
+        pOutTree->Fill( );
     }
+
+    pOutTree->Write( );
     
     TCanvas cvs( "cvs", "cvs", 800, 600 );
     // TCanvas cvs( "cvs", "cvs", 800, 800 );
